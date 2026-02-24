@@ -9,7 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<FirebaseService>();
+builder.Services.AddSingleton<FirebaseService>(); // Lo tuve que buscar en google
 
 var app = builder.Build();
 
