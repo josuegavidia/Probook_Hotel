@@ -162,10 +162,18 @@ public class FirebaseService
          * Devolvemos una referencia a la coleccion
          * GetCollectionReference: no descarga, apunta a los datos
          * Es como un apuntador a la coleccion
-         * 
          */
         return _firestoreDb.Collection(collectionName);
+    }
 
+    /*
+     * RunTransactionAsync: ejecuta multiples operaciones de Firestore como una unidad atomica
+     * Si alguna operacion falla, ninguna se aplica (todo o nada)
+     * El parametro updateFunc recibe un Transaction y devuelve Task
+     * Se usa para garantizar consistencia cuando se escriben multiples documentos a la vez
+     */
+    public async Task RunTransactionAsync(Func<Transaction, Task> updateFunc)
+    {
+        await _firestoreDb.RunTransactionAsync(updateFunc);
     }
 }
-
