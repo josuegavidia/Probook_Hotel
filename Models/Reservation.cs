@@ -1,26 +1,61 @@
-namespace Proyecto_Progra_Web.API.Models;
+using Google.Cloud.Firestore;
+using System;
 
-public class Reservation
+namespace Proyecto_Progra_Web.API.Models
 {
-    public string Id { get; set; } = string.Empty;
+    // FirestoreData habilita la serializacion automatica con Firestore
+    // Este registro es INMUTABLE: una vez creado no se modifica, funciona como log de auditoria
+    [FirestoreData]
+    public class Reservation
+    {
+        // Id del documento en Firestore, se asigna externamente
+        public string Id { get; set; } = string.Empty;
 
-    public string UserId { get; set; } = string.Empty;
+        // Id del usuario que realizo la reserva
+        [FirestoreProperty]
+        public string UserId { get; set; } = string.Empty;
 
-    public string RoomId { get; set; } = string.Empty;
+        // Nombre del usuario al momento de la reserva (para auditoria sin consultar Users)
+        [FirestoreProperty]
+        public string UserName { get; set; } = string.Empty;
 
-    public DateTime CheckIn { get; set; }
+        // Id de la habitacion reservada
+        [FirestoreProperty]
+        public string RoomId { get; set; } = string.Empty;
 
-    public DateTime CheckOut { get; set; }
+        // Numero de habitacion al momento de la reserva (para auditoria)
+        [FirestoreProperty]
+        public string RoomNumber { get; set; } = string.Empty;
 
-    public int GuestCount { get; set; }
+        // Tipo de habitacion al momento de la reserva (para auditoria)
+        [FirestoreProperty]
+        public string RoomType { get; set; } = string.Empty;
 
-    public decimal TotalPrice { get; set; }
+        // Fecha de inicio del hospedaje
+        [FirestoreProperty]
+        public DateTime CheckInDate { get; set; }
 
-    public string Status { get; set; } = string.Empty; 
+        // Fecha de fin del hospedaje
+        [FirestoreProperty]
+        public DateTime CheckOutDate { get; set; }
 
-    public string Notes { get; set; } = string.Empty;
+        // Cantidad de noches calculada automaticamente (CheckOut - CheckIn)
+        [FirestoreProperty]
+        public int Nights { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+        // Costo total incluyendo impuestos (tarifa base * noches * impuesto)
+        [FirestoreProperty]
+        public double TotalCost { get; set; }
 
-    public string CreatedBy { get; set; } = string.Empty;
+        // Estado de la reserva: "confirmed" o "pending"
+        [FirestoreProperty]
+        public string Status { get; set; } = "confirmed";
+
+        // Fecha y hora exacta en que se creo la reserva (para auditoria y reportes)
+        [FirestoreProperty]
+        public DateTime Timestamp { get; set; }
+
+        // Constructor vacio requerido por Firestore para deserializar documentos
+        public Reservation() { }
+    }
 }
