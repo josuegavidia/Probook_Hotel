@@ -2,64 +2,44 @@
 
 using Proyecto_Progra_Web.API.DTOs;
 using Proyecto_Progra_Web.API.Models;
+
 /// <summary>
-/// IAuthService define los metodos necesarios para la autenticación
+/// IAuthService define los metodos necesarios para la autenticacion de usuarios.
 ///
-/// Responsibilidades
-/// - Registrar nuevos usuarios
-/// - Validar credenciales del login
-/// - Generar tokens JWT
-/// - Validad los tokens existentes
-///
+/// Responsabilidades:
+/// - Registrar nuevos usuarios (rol "guest" por defecto segun el PDF)
+/// - Validar credenciales en el login
+/// - Generar y validar tokens JWT
+/// - Consultar usuarios por ID
 /// </summary>
 public interface IAuthService
 {
-    /**
-     * Registrar:
-     * 1. Validar el correo y pass
-     * 2. Verificar que el correo no este duplicado
-     * 3. Crear usuario en Firebase Auth
-     * 4. Guardar en el documento de User en FS
-     * 5. Devolver respuesta del usuario creado
-     *
-     * Parametros:
-     *   registerDto contiene el correo, pass, fullname
-     *
-     * Retorna:
-     *  User: el usuario con sus propiedades y su ID
-     *
-     * Lanza excepciones:
-     *   Email ya existe
-     *   Password muy corto
-     *   Error interno de FB
-     */
-
+    // Registrar un nuevo usuario en Firestore
+    // Lanza ArgumentException si el email ya existe o el password es muy corto
     Task<User> Register(RegisterDto registerDto);
 
-    /**
-     *   Login:
-     *   1. Validar que el email existe
-     *   2. Verificar credenciales contra Firebase Auth
-     *   3. Si son correctas, generar el JWT
-     *   4. Actualizar los valores de login
-     *   5. Devolver un token y datos del usuario
-     *
-     *   Parametro:
-     *   loginDto: email, pass
-     *
-     *   Retornar
-     *   tupla (User, token JWT)
-     *
-     *   Lanza excepcion:
-     *   - Email no existe
-     *   - Pass es incorrecto
-     * 
-     */
+    // Autenticar un usuario y devolver sus datos junto con el token JWT
+    // Lanza InvalidOperationException si las credenciales son incorrectas
     Task<(User user, string token)> Login(LoginDto loginDto);
 
+    // Verificar si un token JWT es valido y no ha expirado
     Task<bool> ValidateToken(string token);
 
+    // Obtener los datos de un usuario por su ID de Firestore
+    // Devuelve null si no existe
     Task<User?> GetUserById(string userId);
 
+    // Generar un token JWT firmado para el usuario dado
     string GenerateJwtToken(User user);
 
+    // Obtener todos los usuarios con rol "guest" registrados en el sistema
+    Task<List<User>> GetAllGuests();
+
+    // Verificar que el email existe en el sistema
+    // Devuelve true si existe, false si no
+    Task<bool> ForgotPassword(string email);
+
+    // Actualizar la contrasena del usuario identificado por email
+    // Lanza InvalidOperationException si el email no existe
+    Task ResetPassword(string email, string newPassword);
+}
