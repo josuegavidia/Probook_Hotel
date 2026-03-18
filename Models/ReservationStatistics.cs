@@ -1,28 +1,52 @@
-namespace Proyecto_Progra_Web.API.Models;
+using Google.Cloud.Firestore;
 
-public class ReservationStatistics
+namespace Proyecto_Progra_Web.API.Models
 {
-    public string Id { get; set; } = string.Empty;
+    // ReservationStatistics NO se almacena en Firestore directamente
+    // Se calcula en tiempo de ejecucion a partir de los documentos de Reservations y Rooms
+    // El PDF indica que los reportes se actualizan en tiempo real
+    public class ReservationStatistics
+    {
+        // Total de habitaciones registradas en el sistema
+        public int TotalRooms { get; set; }
 
-    public int TotalReservations { get; set; }
+        // Total de noches reservadas en todas las reservas
+        public int TotalNightsReserved { get; set; }
 
-    public int ActiveReservations { get; set; }
+        // Porcentaje de ocupacion: (habitaciones con al menos una reserva / total) * 100
+        public double OccupancyPercentage { get; set; }
 
-    public int CancelledReservations { get; set; }
+        // Ingresos totales generados por todas las reservas en el periodo
+        public double TotalRevenue { get; set; }
 
-    public int CompletedReservations { get; set; }
+        // Cantidad de reservas confirmadas
+        public int ConfirmedReservations { get; set; }
 
-    public decimal TotalRevenue { get; set; }
+        // Cantidad de reservas pendientes
+        public int PendingReservations { get; set; }
 
-    public decimal AverageStayDuration { get; set; } // en días
+        // Desglose de reservas agrupadas por tipo de habitacion
+        // Clave: tipo de habitacion (Simple, Doble, Suite...)
+        // Valor: cantidad de reservas de ese tipo
+        public Dictionary<string, int> ReservationsByRoomType { get; set; } = new Dictionary<string, int>();
 
-    public string MostBookedRoomId { get; set; } = string.Empty;
+        // Ingresos agrupados por tipo de habitacion para el grafico de barras
+        // Clave: tipo de habitacion
+        // Valor: ingresos totales de ese tipo
+        public Dictionary<string, double> RevenueByRoomType { get; set; } = new Dictionary<string, double>();
 
-    public string MostActiveUserId { get; set; } = string.Empty;
+        // Tendencia de ocupacion por fecha para el grafico temporal
+        // Clave: fecha en formato "yyyy-MM-dd"
+        // Valor: cantidad de reservas activas ese dia
+        public Dictionary<string, int> OccupancyTrend { get; set; } = new Dictionary<string, int>();
 
-    public DateTime PeriodStart { get; set; }
+        // Inicio del periodo analizado
+        public DateTime PeriodStart { get; set; }
 
-    public DateTime PeriodEnd { get; set; }
+        // Fin del periodo analizado
+        public DateTime PeriodEnd { get; set; }
 
-    public DateTime GeneratedAt { get; set; }
+        // Momento exacto en que se generaron estas estadisticas
+        public DateTime GeneratedAt { get; set; }
+    }
 }
