@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
-
+//prueba
 // Deshabilitar el mapeo automatico de claims a nivel global
 // Necesario para que el claim "role" no sea convertido al tipo URI largo de Microsoft
 // y [Authorize(Roles = "manager")] funcione correctamente
