@@ -8,6 +8,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Gestion de Habitaciones</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <!-- Cloudinary: upload directo desde el frontend, sin backend -->
+    <script>
+        // ============================================================
+        // CLOUDINARY — Configuración
+        // Cloud name y upload preset son públicos (unsigned preset),
+        // es seguro tenerlos en el frontend. El preset solo permite
+        // subir imágenes de hasta 5MB a la carpeta probook/rooms.
+        // ============================================================
+        const CLOUDINARY_CLOUD_NAME    = 'dosoe69nm';
+        const CLOUDINARY_UPLOAD_PRESET = 'probook_rooms';
+
+        // Sube un archivo a Cloudinary y retorna la URL segura (https).
+        // roomId se usa como public_id para sobreescribir la imagen si
+        // el gerente edita la habitación más de una vez.
+        window.uploadRoomPhoto = async function(file, roomId) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', 'probook/rooms');
+            // public_id único por habitación — al editar, sobreescribe la imagen anterior
+            formData.append('public_id', `room_${roomId}`);
+
+            const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+            const res = await fetch(url, { method: 'POST', body: formData });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error?.message || `Error Cloudinary (${res.status})`);
+            }
+
+            const data = await res.json();
+            // secure_url siempre es https — preferir sobre data.url
+            return data.secure_url;
+        };
+    </script>
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .rooms-grid {
             display: grid;
@@ -217,14 +256,14 @@
             justify-content: flex-end;
         }
 
-        [data-theme="dark"] .room-card { background: #1A1D26 !important; border-color: #2A2D3A; }
-        [data-theme="dark"] .room-info-row { border-color: #2A2D3A; }
-        [data-theme="dark"] .room-info-label { color: #A0A8B8; }
-        [data-theme="dark"] .room-info-value { color: #E8EAF0; }
-        [data-theme="dark"] .room-card-footer { background: #1A1D26 !important; border-color: #2A2D3A; }
-        [data-theme="dark"] .reservation-detail { background: #12141c; border-color: #2A2D3A; }
-        [data-theme="dark"] .reservation-detail-row { border-color: #2A2D3A; }
-        [data-theme="dark"] .confirm-box { background: #1A1D26; border-color: #2A2D3A; }
+
+
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -333,8 +372,35 @@
             <span class="form-hint">Ejemplo: WiFi, TV, AC, Terraza</span>
         </div>
         <div class="form-group">
-            <label class="form-label">URL de foto</label>
-            <input type="text" id="room-photo" class="form-control" placeholder="https://...">
+            <label class="form-label">Foto de la habitacion</label>
+
+            <!-- Preview de la imagen actual -->
+            <div id="photo-preview-wrap" style="display:none;margin-bottom:0.75rem">
+                <img id="photo-preview-img"
+                     src="" alt="Preview"
+                     style="width:100%;max-height:180px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border)">
+                <button type="button" onclick="removePhoto()"
+                        style="margin-top:0.4rem;font-size:0.78rem;color:var(--danger);background:none;border:none;cursor:pointer;padding:0">
+                    🗑 Quitar foto
+                </button>
+            </div>
+
+            <!-- Input file -->
+            <input type="file" id="room-photo-file" accept="image/*"
+                   onchange="handlePhotoSelected(this)"
+                   style="display:none">
+            <button type="button" id="btn-pick-photo"
+                    onclick="document.getElementById('room-photo-file').click()"
+                    class="btn btn-outline" style="width:100%">
+                📷 Seleccionar imagen
+            </button>
+            <span class="form-hint">JPG, PNG o WebP · máx. 5 MB · se sube al guardar</span>
+
+            <!-- Estado de la subida -->
+            <div id="upload-status" style="display:none;margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)"></div>
+
+            <!-- Campo oculto que guarda la URL final (Storage o URL existente) -->
+            <input type="hidden" id="room-photo">
         </div>
         <input type="hidden" id="room-editing-number">
         <div class="modal-footer">
@@ -751,10 +817,21 @@
         document.getElementById('room-capacity').value = room.capacity;
         document.getElementById('room-rate').value = room.baseRate;
         document.getElementById('room-description').value = room.description || '';
-        document.getElementById('room-photo').value = room.photoUrl || '';
+        document.getElementById('room-amenities').value = Array.isArray(room.amenities) ? room.amenities.join(', ') : '';
         document.getElementById('room-editing-number').value = roomNumber;
-        const amenities = Array.isArray(room.amenities) ? room.amenities.join(', ') : '';
-        document.getElementById('room-amenities').value = amenities;
+
+        // Si la habitacion ya tiene foto (Cloudinary o Imgur), mostrar preview
+        const existingPhoto = room.photoUrl && room.photoUrl.startsWith('http') ? room.photoUrl : '';
+        document.getElementById('room-photo').value = existingPhoto;
+        if (existingPhoto) {
+            document.getElementById('photo-preview-img').src = existingPhoto;
+            document.getElementById('photo-preview-wrap').style.display = 'block';
+            document.getElementById('btn-pick-photo').textContent = '📷 Cambiar imagen';
+        } else {
+            document.getElementById('photo-preview-wrap').style.display = 'none';
+            document.getElementById('btn-pick-photo').textContent = '📷 Seleccionar imagen';
+        }
+
         clearAlert('modal-alert');
         openModal('modal-room');
     }
@@ -789,7 +866,6 @@
         const capacity = parseInt(document.getElementById('room-capacity').value);
         const baseRate = parseFloat(document.getElementById('room-rate').value);
         const description = document.getElementById('room-description').value.trim();
-        const photoUrl = document.getElementById('room-photo').value.trim();
         const amenitiesRaw = document.getElementById('room-amenities').value.trim();
         const amenities = amenitiesRaw ? amenitiesRaw.split(',').map(a => a.trim()).filter(Boolean) : [];
 
@@ -801,7 +877,29 @@
 
         const btn = document.getElementById('btn-save-room');
         setLoading(btn, true);
+
         try {
+            // Si hay un archivo seleccionado, subirlo a Firebase Storage primero
+            let photoUrl = document.getElementById('room-photo').value.trim();
+            const fileInput = document.getElementById('room-photo-file');
+
+            if (fileInput.files && fileInput.files[0]) {
+                const status = document.getElementById('upload-status');
+                status.style.display = 'block';
+                status.textContent = '⏳ Subiendo imagen...';
+
+                try {
+                    // uploadRoomPhoto() está definido arriba, sube a Cloudinary
+                    photoUrl = await window.uploadRoomPhoto(fileInput.files[0], roomNumber || editingNumber);
+                    status.textContent = '✅ Imagen subida';
+                } catch (uploadErr) {
+                    status.style.display = 'none';
+                    showAlert('modal-alert', `Error al subir la imagen: ${uploadErr.message}`);
+                    setLoading(btn, false);
+                    return;
+                }
+            }
+
             if (isEditing) {
                 await apiPut(`/Rooms/${editingNumber}`, { roomType, capacity, baseRate, description, photoUrl, amenities });
                 showAlert('alert-container', `Habitacion ${editingNumber} actualizada correctamente.`, 'success');
@@ -817,6 +915,36 @@
         } finally {
             setLoading(btn, false);
         }
+    }
+
+    // Muestra preview local cuando el usuario selecciona un archivo
+    function handlePhotoSelected(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('modal-alert', 'La imagen no puede superar los 5 MB.', 'warning');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('photo-preview-img').src = e.target.result;
+            document.getElementById('photo-preview-wrap').style.display = 'block';
+            document.getElementById('btn-pick-photo').textContent = '📷 Cambiar imagen';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Quita la foto seleccionada/existente
+    function removePhoto() {
+        document.getElementById('room-photo-file').value = '';
+        document.getElementById('room-photo').value = '';
+        document.getElementById('photo-preview-img').src = '';
+        document.getElementById('photo-preview-wrap').style.display = 'none';
+        document.getElementById('btn-pick-photo').textContent = '📷 Seleccionar imagen';
+        document.getElementById('upload-status').style.display = 'none';
     }
 
     function resetRoomForm() {

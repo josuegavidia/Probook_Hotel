@@ -8,6 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Reservar Habitacion</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .reservation-layout {
             display: grid;
@@ -127,8 +131,8 @@
             .summary-card { position: static; }
         }
 
-        [data-theme="dark"] .summary-card { background: #1A1D26 !important; border-color: #2A2D3A; }
-        [data-theme="dark"] .policy-card { background: rgba(74,144,196,0.06); border-color: rgba(74,144,196,0.2); }
+
+
     </style>
 </head>
 <body>
@@ -236,7 +240,7 @@
                     <span class="summary-row-value" id="sum-base">--</span>
                 </div>
                 <div class="summary-row">
-                    <span class="summary-row-label">Impuesto (15%)</span>
+                    <span class="summary-row-label" id="sum-tax-label">Impuesto (15%)</span>
                     <span class="summary-row-value" id="sum-tax">--</span>
                 </div>
 
@@ -254,19 +258,20 @@
     requireAuth('guest');
     renderNavbar('guest');
 
+    // Actualizar label del impuesto con la tasa real una vez que loadCurrencySettings() resuelva
+    document.addEventListener('DOMContentLoaded', () => {
+        const lbl = document.getElementById('sum-tax-label');
+        if (lbl) lbl.textContent = `Impuesto (${Math.round(getTaxRate() * 100)}%)`;
+    });
+
     const user = getUser();
 
     // ── Verificación de reserva activa ─────────────────────────────────────
-    // Primero chequeo rápido por fecha desde localStorage (síncrono, sin red)
+    // Chequeo rápido por fecha desde localStorage (síncrono, sin red)
     if (user?.hasReserved) {
-        const dates = user.reservedDates || '';
-        const match = dates.match(/\d{2}-\d{2}-\d{4}.*?(\d{2})-(\d{2})-(\d{4})$/);
-        let locallyExpired = false;
-        if (match) {
-            const checkOutLocal = new Date(`${match[3]}-${match[2]}-${match[1]}T00:00:00Z`);
-            const hondurasNow   = new Date(Date.now() - 6 * 60 * 60 * 1000);
-            locallyExpired = checkOutLocal < hondurasNow;
-        }
+        const checkOut = parseCheckOut(user.reservedDates || '');
+        const hondurasNow = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        const locallyExpired = checkOut ? checkOut < hondurasNow : false;
 
         if (locallyExpired) {
             // Expirada según localStorage — limpiar y permitir reservar
@@ -281,8 +286,8 @@
                     const r = await apiGet('/Reservations/my');
                     const parts       = r.checkOutDate.split('-');
                     const checkOutUTC = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`);
-                    const hondurasNow = new Date(Date.now() - 6 * 60 * 60 * 1000);
-                    const hasExpired  = checkOutUTC < hondurasNow;
+                    const now         = new Date(Date.now() - 6 * 60 * 60 * 1000);
+                    const hasExpired  = checkOutUTC < now;
                     const isCancelled = r.status === 'cancelled';
 
                     if (!hasExpired && !isCancelled) {
@@ -301,6 +306,18 @@
                 }
             })();
         }
+    }
+
+    // Extrae la fecha de checkout de "dd-MM-yyyy - dd-MM-yyyy"
+    // Retorna un Date UTC o null si el formato es inválido.
+    function parseCheckOut(datesStr) {
+        if (!datesStr) return null;
+        const parts = datesStr.split(' - ');
+        if (parts.length < 2) return null;
+        const [dd, mm, yyyy] = parts[1].trim().split('-');
+        if (!dd || !mm || !yyyy || dd.length > 2 || mm.length > 2 || yyyy.length !== 4) return null;
+        const d = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T00:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
     }
 
     // Leer parametros de la URL si vienen de rooms-list
@@ -358,11 +375,12 @@
             document.getElementById('sum-nights').textContent = `${nights} noche${nights !== 1 ? 's' : ''}`;
 
             if (currentBaseRate && nights > 0) {
+                const tax   = getTaxRate();
                 const base  = currentBaseRate * nights;
-                const tax   = base * 0.15;
-                const total = base + tax;
+                const taxes = base * tax;
+                const total = base + taxes;
                 document.getElementById('sum-base').textContent = formatCurrency(base);
-                document.getElementById('sum-tax').textContent = formatCurrency(tax);
+                document.getElementById('sum-tax').textContent = formatCurrency(taxes);
                 document.getElementById('sum-total').textContent = formatCurrency(total);
             } else {
                 clearCosts();
@@ -463,7 +481,7 @@
             user.reservedDates  = `${response.reservation.checkInDate} - ${response.reservation.checkOutDate}`;
             localStorage.setItem('probook_user', JSON.stringify(user));
 
-            localStorage.setItem('last_reservation', JSON.stringify(response));
+            sessionStorage.setItem('last_reservation', JSON.stringify(response));
             window.location.href = '/reservation-confirmation.html';
 
         } catch (error) {

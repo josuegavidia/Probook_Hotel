@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Habitaciones Disponibles</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .search-card {
             background: white;
@@ -174,10 +178,7 @@
             color: var(--text-muted);
         }
 
-        [data-theme="dark"] .search-card {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-        }
+
         /* ---- Rating stars en tarjetas ---- */
         .room-rating {
             display: flex;
@@ -316,19 +317,16 @@
         .review-item-comment::before { content: '"'; }
         .review-item-comment::after  { content: '"'; }
 
-        [data-theme="dark"] .reviews-modal-box { background: #1A1D26; border-color: #2A2D3A; }
-        [data-theme="dark"] .reviews-modal-header { border-color: #2A2D3A; }
-        [data-theme="dark"] .reviews-modal-avg { border-color: #2A2D3A; }
-        [data-theme="dark"] .review-item { border-color: #2A2D3A; }
-        [data-theme="dark"] .review-item-name { color: #E8EAF0; }
 
-        [data-theme="dark"] .room-card {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-        }
-        [data-theme="dark"] .room-card-body { background: #1A1D26 !important; }
-        [data-theme="dark"] .room-name { color: #E8EAF0; }
-        [data-theme="dark"] .room-meta { color: #A0A8B8; }
+
+
+
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -347,6 +345,7 @@
             <a href="/guest-dashboard.html" class="sidebar-link">🏠 Inicio</a>
             <a href="/rooms-list.html" class="sidebar-link active">🏨 Habitaciones</a>
             <a href="/reservation.html" class="sidebar-link" id="sidebar-reserve">📅 Reservar</a>
+            <a href="/profile.html" class="sidebar-link">👤 Mi perfil</a>
             <a href="/already-reserved.html" class="sidebar-link hidden" id="sidebar-my-reservation">📋 Mi reserva</a>
         </div>
         <div class="sidebar-section">

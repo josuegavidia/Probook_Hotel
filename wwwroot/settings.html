@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Configuracion</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .settings-grid {
             display: grid;
@@ -131,14 +135,14 @@
         .save-hint { font-size: 0.8rem; color: var(--text-muted); }
 
         /* Dark mode */
-        [data-theme="dark"] .settings-card { background: #1A1D26; border-color: #2A2D3A; }
-        [data-theme="dark"] .settings-card-header { border-color: #2A2D3A; }
-        [data-theme="dark"] .settings-card-icon { background: rgba(74,144,196,0.12); }
-        [data-theme="dark"] .preset-btn { background: #12141c; border-color: #2A2D3A; color: #E8EAF0; }
-        [data-theme="dark"] .preset-btn:hover { border-color: #4A90C4; }
-        [data-theme="dark"] .preset-btn.active { border-color: #4A90C4; background: rgba(74,144,196,0.15); }
-        [data-theme="dark"] .save-bar { background: #12141c; border-color: #2A2D3A; }
-        [data-theme="dark"] input[type=range] { background: #2A2D3A; }
+
+
+
+
+
+
+
+
     </style>
 </head>
 <body>

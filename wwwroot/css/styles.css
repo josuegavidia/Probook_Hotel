@@ -813,6 +813,27 @@ tbody td { padding: 0.85rem 1rem; color: var(--text); vertical-align: middle; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ============================================================
+   SKELETON LOADERS — utilitario global
+   ============================================================ */
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+}
+
+.skeleton-box {
+    background: linear-gradient(
+            90deg,
+            var(--border) 25%,
+            color-mix(in srgb, var(--border) 60%, var(--bg-card)) 50%,
+            var(--border) 75%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+    display: block;
+}
+
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -1293,3 +1314,281 @@ tbody td { padding: 0.85rem 1rem; color: var(--text); vertical-align: middle; }
 [data-theme="dark"] .notif-empty {
     color: #6B7280;
 }
+
+/* ============================================================
+   DARK MODE CONSOLIDADO — ProBook
+   Todas las reglas específicas de componentes en un solo lugar.
+   Mueve estas reglas aquí y elimina los bloques [data-theme="dark"]
+   de los archivos HTML individuales.
+   ============================================================ */
+
+/* ---- 404 ---- */
+[data-theme="dark"] .not-found-title { color: var(--text); }
+
+/* ---- Auth (login, register, change-password, forgot-password) ---- */
+[data-theme="dark"] .form-label { color: var(--text); }
+[data-theme="dark"] .text-muted { color: var(--text-muted); }
+
+/* ---- already-reserved ---- */
+[data-theme="dark"] .existing-label { color: var(--text-muted); }
+[data-theme="dark"] .existing-value { color: var(--text); }
+
+/* ---- guest-dashboard ---- */
+[data-theme="dark"] .quick-action-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border);
+}
+[data-theme="dark"] .history-item {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .history-item:hover { border-color: var(--primary); }
+[data-theme="dark"] .history-item-status { border-color: var(--border); }
+[data-theme="dark"] .history-empty {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .reservation-status-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border);
+}
+[data-theme="dark"] .review-section {
+    background: rgba(74,144,196,0.05);
+    border-color: rgba(74,144,196,0.2);
+}
+[data-theme="dark"] .modal-box {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+/* ---- guest-list ---- */
+[data-theme="dark"] .page-btn {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .page-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+[data-theme="dark"] .page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+[data-theme="dark"] .page-size-select {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .confirm-modal {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .reserve-room-option {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .reserve-room-option:hover {
+    border-color: var(--primary);
+    background: rgba(74,144,196,0.06);
+}
+
+/* ---- index (landing) ---- */
+[data-theme="dark"] .btn-hero {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border-color: rgba(255,255,255,0.25);
+}
+[data-theme="dark"] .btn-hero:hover {
+    background: rgba(255,255,255,0.2);
+}
+[data-theme="dark"] .hero { background: var(--bg) !important; }
+[data-theme="dark"] .hero-nav {
+    background: var(--bg-card) !important;
+    border-bottom-color: var(--border) !important;
+}
+[data-theme="dark"] .hero-title { color: var(--text); }
+[data-theme="dark"] .hero-desc { color: var(--text-light); }
+[data-theme="dark"] .hero-tag {
+    background: rgba(74,144,196,0.1);
+    color: var(--primary);
+    border-color: rgba(74,144,196,0.2);
+}
+[data-theme="dark"] .features { background: var(--bg); }
+[data-theme="dark"] .feature-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .feature-title { color: var(--text); }
+[data-theme="dark"] .feature-desc { color: var(--text-light); }
+[data-theme="dark"] .section-title { color: var(--text); }
+[data-theme="dark"] .section-desc { color: var(--text-light); }
+[data-theme="dark"] .footer { background: #0a0c12; }
+[data-theme="dark"] .hero-image { border-color: var(--border); }
+[data-theme="dark"] .hero-nav-links a { color: var(--text-light); }
+[data-theme="dark"] .hero-nav-links a:hover { color: var(--primary); }
+[data-theme="dark"] .btn-hero-secondary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+[data-theme="dark"] .catalog { background: var(--bg); }
+[data-theme="dark"] .cstat-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .cfilter-btn {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-light);
+}
+[data-theme="dark"] .cfilter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+[data-theme="dark"] .croom-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .croom-number { color: var(--text); }
+[data-theme="dark"] .croom-amenity {
+    background: rgba(74,144,196,0.08);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+[data-theme="dark"] .croom-footer { border-color: var(--border); }
+[data-theme="dark"] .croom-skeleton {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .catalog-cta-text { color: var(--text-muted); }
+[data-theme="dark"] .reviews-section { background: #12141c; }
+[data-theme="dark"] .review-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .review-meta { border-color: var(--border); }
+[data-theme="dark"] .review-author { color: var(--text); }
+
+/* ---- manager-dashboard ---- */
+[data-theme="dark"] .quick-card,
+[data-theme="dark"] .dash-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border);
+}
+[data-theme="dark"] .dash-card-header { border-color: var(--border); }
+[data-theme="dark"] .dash-card-title,
+[data-theme="dark"] .quick-card-title,
+[data-theme="dark"] .activity-name,
+[data-theme="dark"] .room-num { color: var(--text); }
+[data-theme="dark"] .quick-card-label,
+[data-theme="dark"] .activity-detail,
+[data-theme="dark"] .activity-time,
+[data-theme="dark"] .room-type-tag,
+[data-theme="dark"] .room-reserved-by,
+[data-theme="dark"] .occupancy-meta,
+[data-theme="dark"] .mini-stat-label { color: var(--text-muted); }
+[data-theme="dark"] .mini-stat { background: #22263A; }
+[data-theme="dark"] .mini-stat-value { color: var(--text); }
+[data-theme="dark"] .activity-item,
+[data-theme="dark"] .room-status-item { border-color: var(--border); }
+[data-theme="dark"] .occupancy-bar-wrap { background: var(--border); }
+
+/* ---- profile ---- */
+[data-theme="dark"] .profile-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .profile-card-header { border-color: var(--border); }
+[data-theme="dark"] .stat-row { border-color: var(--border); }
+
+/* ---- reports ---- */
+[data-theme="dark"] .hist-filters {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .report-tab-btn.active {
+    background: rgba(74,144,196,0.08);
+}
+[data-theme="dark"] .chart-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .chart-card h3 { color: var(--text); }
+[data-theme="dark"] .period-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+/* ---- reservation ---- */
+[data-theme="dark"] .policy-card {
+    background: rgba(74,144,196,0.06);
+    border-color: rgba(74,144,196,0.2);
+}
+
+/* ---- reservation-confirmation ---- */
+[data-theme="dark"] .detail-label { color: var(--text-muted); }
+[data-theme="dark"] .detail-value { color: var(--text); }
+[data-theme="dark"] .policy-info {
+    background: rgba(74,144,196,0.06);
+    border-color: rgba(74,144,196,0.2);
+}
+
+/* ---- room-management ---- */
+[data-theme="dark"] .room-info-row { border-color: var(--border); }
+[data-theme="dark"] .room-card-footer {
+    background: var(--bg-card) !important;
+    border-color: var(--border);
+}
+[data-theme="dark"] .reservation-detail {
+    background: #12141c;
+    border-color: var(--border);
+}
+[data-theme="dark"] .reservation-detail-row { border-color: var(--border); }
+[data-theme="dark"] .confirm-box {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+/* ---- rooms-list ---- */
+[data-theme="dark"] .reviews-modal-box {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .reviews-modal-header { border-color: var(--border); }
+[data-theme="dark"] .reviews-modal-avg { border-color: var(--border); }
+[data-theme="dark"] .review-item { border-color: var(--border); }
+[data-theme="dark"] .review-item-name { color: var(--text); }
+[data-theme="dark"] .room-name { color: var(--text); }
+[data-theme="dark"] .room-meta { color: var(--text-muted); }
+[data-theme="dark"] .room-card-body {
+    background: var(--bg-card) !important;
+}
+
+/* ---- settings ---- */
+[data-theme="dark"] .settings-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+[data-theme="dark"] .settings-card-header { border-color: var(--border); }
+[data-theme="dark"] .settings-card-icon {
+    background: rgba(74,144,196,0.12);
+}
+[data-theme="dark"] .preset-btn {
+    background: #12141c;
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .preset-btn:hover { border-color: var(--primary); }
+[data-theme="dark"] .preset-btn.active {
+    border-color: var(--primary);
+    background: rgba(74,144,196,0.15);
+}
+[data-theme="dark"] .save-bar {
+    background: #12141c;
+    border-color: var(--border);
+}
+[data-theme="dark"] input[type=range] { background: var(--border); }
