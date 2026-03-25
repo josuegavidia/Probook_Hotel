@@ -104,7 +104,7 @@ async function apiGet(endpoint) {
             'Content-Type': 'application/json'
         }
     });
-    if (response.status === 401) { handleUnauthorized(); return; }
+    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Error en la peticion');
     return data;
@@ -120,7 +120,7 @@ async function apiPost(endpoint, body, requireToken = true) {
         body: JSON.stringify(body)
     });
     const data = await response.json();
-    if (response.status === 401) { handleUnauthorized(); return; }
+    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
     if (!response.ok) {
         const err = new Error(data.message || 'Error en la peticion');
         err.status = response.status;
@@ -140,7 +140,7 @@ async function apiPut(endpoint, body) {
         body: JSON.stringify(body)
     });
     const data = await response.json();
-    if (response.status === 401) { handleUnauthorized(); return; }
+    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
     if (!response.ok) throw new Error(data.message || 'Error en la peticion');
     return data;
 }
@@ -153,9 +153,9 @@ async function apiDelete(endpoint) {
             'Content-Type': 'application/json'
         }
     });
+    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
     if (response.status === 204) return true;
     const data = await response.json();
-    if (response.status === 401) { handleUnauthorized(); return; }
     if (!response.ok) throw new Error(data.message || 'Error en la peticion');
     return data;
 }

@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Reportes</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -176,18 +180,12 @@
 
         th.hist-active { color: var(--primary); }
 
-        [data-theme="dark"] .hist-filters { background: #1A1D26; border-color: #2A2D3A; }
-        [data-theme="dark"] .report-tab-btn.active { background: rgba(74,144,196,0.08); }
 
-        [data-theme="dark"] .chart-card {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-        }
-        [data-theme="dark"] .period-card {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-        }
-        [data-theme="dark"] .chart-card h3 { color: #E8EAF0; }
+
+
+
+
+
 
         .export-btn {
             display: inline-flex;

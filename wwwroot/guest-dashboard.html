@@ -8,6 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Panel del Huesped</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .welcome-card {
             background: linear-gradient(135deg, var(--primary-dark), var(--primary));
@@ -257,7 +261,7 @@
             margin-top: 1rem;
         }
 
-        [data-theme="dark"] .quick-action-card { background: #1A1D26 !important; border-color: #2A2D3A; }
+
 
         /* ---- Historial de reservas ---- */
         .history-section {
@@ -368,15 +372,15 @@
             border-radius: var(--radius);
         }
 
-        [data-theme="dark"] .history-item { background: #1A1D26; border-color: #2A2D3A; }
-        [data-theme="dark"] .history-item:hover { border-color: #4A90C4; }
-        [data-theme="dark"] .history-item-status { border-color: #2A2D3A; }
-        [data-theme="dark"] .history-empty { background: #1A1D26; border-color: #2A2D3A; }
-        [data-theme="dark"] .quick-action-title { color: #E8EAF0; }
-        [data-theme="dark"] .quick-action-desc { color: #A0A8B8; }
-        [data-theme="dark"] .reservation-status-card { background: #1A1D26 !important; border-color: #2A2D3A; }
-        [data-theme="dark"] .review-section { background: rgba(74,144,196,0.05); border-color: rgba(74,144,196,0.2); }
-        [data-theme="dark"] .modal-box { background: #1A1D26; border-color: #2A2D3A; }
+
+
+
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -393,6 +397,7 @@
             <a href="/guest-dashboard.html" class="sidebar-link active">🏠 Inicio</a>
             <a href="/rooms-list.html" class="sidebar-link">🏨 Habitaciones</a>
             <a href="/reservation.html" class="sidebar-link" id="sidebar-reserve">📅 Reservar</a>
+            <a href="/profile.html" class="sidebar-link">👤 Mi perfil</a>
             <a href="/already-reserved.html" class="sidebar-link hidden" id="sidebar-my-reservation">📋 Mi reserva</a>
         </div>
         <div class="sidebar-section">
@@ -409,7 +414,33 @@
 
         <div id="alert-container" style="margin-bottom:1rem"></div>
 
-        <div id="reservation-section"></div>
+        <div id="reservation-section">
+            <!-- Skeleton: visible mientras loadReservation() resuelve -->
+            <div id="reservation-skeleton" class="reservation-status-card" style="margin-bottom:1.5rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+                    <span class="skeleton-box" style="height:1.1rem;width:38%"></span>
+                    <span class="skeleton-box" style="height:1.6rem;width:90px;border-radius:20px"></span>
+                </div>
+                <div class="reservation-detail-grid">
+                    <div class="reservation-detail-item">
+                        <span class="skeleton-box" style="height:0.7rem;width:55%;margin-bottom:0.5rem"></span>
+                        <span class="skeleton-box" style="height:1.1rem;width:70%"></span>
+                    </div>
+                    <div class="reservation-detail-item">
+                        <span class="skeleton-box" style="height:0.7rem;width:55%;margin-bottom:0.5rem"></span>
+                        <span class="skeleton-box" style="height:1.1rem;width:70%"></span>
+                    </div>
+                    <div class="reservation-detail-item">
+                        <span class="skeleton-box" style="height:0.7rem;width:45%;margin-bottom:0.5rem"></span>
+                        <span class="skeleton-box" style="height:1.1rem;width:40%"></span>
+                    </div>
+                    <div class="reservation-detail-item">
+                        <span class="skeleton-box" style="height:0.7rem;width:50%;margin-bottom:0.5rem"></span>
+                        <span class="skeleton-box" style="height:1.1rem;width:60%"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="page-header mt-3">
             <h2 class="page-title" style="font-size:1.2rem">Acciones rapidas</h2>
@@ -492,6 +523,12 @@
 
     loadDashboard();
 
+    // Ocultar skeleton de inmediato si sabemos que no hay reserva activa
+    if (!user?.hasReserved) {
+        const sk = document.getElementById('reservation-skeleton');
+        if (sk) sk.remove();
+    }
+
     async function loadDashboard() {
         try {
             if (user?.hasReserved) {
@@ -506,6 +543,12 @@
             setSidebarNoReservation();
             renderNoReservation();
         }
+    }
+
+    // Elimina el skeleton placeholder la primera vez que se renderiza contenido real
+    function removeSkeleton() {
+        const sk = document.getElementById('reservation-skeleton');
+        if (sk) sk.remove();
     }
 
     // Helpers de sidebar
@@ -595,6 +638,7 @@
             ? `<button class="btn-modify" onclick="openModify('${r.checkInDate}','${r.checkOutDate}')">Modificar fechas</button>`
             : '';
 
+        removeSkeleton();
         document.getElementById('reservation-section').innerHTML = `
             <div class="reservation-status-card">
                 <div class="flex-between">
@@ -688,6 +732,7 @@
                 `}
             </div>` : '';
 
+        removeSkeleton();
         document.getElementById('reservation-section').innerHTML = `
             <div class="reservation-status-card">
                 <div class="flex-between">
@@ -734,6 +779,7 @@
     }
 
     function renderNoReservation() {
+        removeSkeleton();
         document.getElementById('reservation-section').innerHTML = `
             <div class="reservation-status-card">
                 <div class="empty-state" style="padding:1.5rem">

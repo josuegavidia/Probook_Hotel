@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Ya Tienes Reserva</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .blocked-wrapper {
             max-width: 560px;
@@ -112,17 +116,6 @@
             color: var(--text);
         }
 
-        .immutable-notice {
-            background: rgba(230, 126, 34, 0.06);
-            border: 1px solid rgba(230, 126, 34, 0.2);
-            border-radius: var(--radius-sm);
-            padding: 0.85rem 1rem;
-            margin-top: 1.25rem;
-            font-size: 0.82rem;
-            color: var(--warning);
-            line-height: 1.5;
-        }
-
         .actions {
             display: flex;
             gap: 1rem;
@@ -137,13 +130,10 @@
 
         .blocked-wrapper { animation: fadeInUp 0.4s ease; }
 
-        [data-theme="dark"] .existing-reservation {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-        }
-        [data-theme="dark"] .existing-detail-item { background: #0F1117; border-color: #2A2D3A; }
-        [data-theme="dark"] .existing-label { color: #A0A8B8; }
-        [data-theme="dark"] .existing-value { color: #E8EAF0; }
+
+
+
+
     </style>
 </head>
 <body style="background:var(--bg)">
@@ -158,8 +148,8 @@
     <div class="blocked-icon">🔒</div>
     <h1 class="blocked-title">Ya tienes una reserva</h1>
     <p class="blocked-subtitle">
-        El sistema permite una sola reserva por huesped.
         Aqui estan los detalles de tu reserva activa.
+        Para modificar fechas o cancelarla, ve a tu panel.
     </p>
 
     <!-- Datos de la reserva existente -->
@@ -182,28 +172,43 @@
     renderNavbar('guest');
 
     // ── Verificación RÁPIDA desde localStorage ──────────────────────────────
-    // Si el usuario tiene fechas guardadas localmente, verificar antes de ir al servidor.
-    // Esto evita que la página bloquee aunque el backend aún no esté recompilado.
+    // Usa parseCheckOut() en lugar de un regex frágil para extraer la fecha
+    // de checkout del campo reservedDates ("dd-MM-yyyy - dd-MM-yyyy").
     (function checkLocalExpiry() {
         const u = getUser();
         if (!u) return;
-        // reservedDates tiene formato "dd-MM-yyyy - dd-MM-yyyy"
-        const dates = u.reservedDates || '';
-        const match = dates.match(/\d{2}-\d{2}-\d{4}.*?(\d{2})-(\d{2})-(\d{4})$/);
-        if (match) {
-            const checkOutLocal = new Date(`${match[3]}-${match[2]}-${match[1]}T00:00:00Z`);
-            const hondurasNow   = new Date(Date.now() - 6 * 60 * 60 * 1000);
-            if (checkOutLocal < hondurasNow) {
-                // La reserva ya expiró según localStorage — limpiar y redirigir sin esperar al servidor
-                u.hasReserved    = false;
-                u.reservedRoomId = null;
-                u.reservedDates  = null;
-                localStorage.setItem('probook_user', JSON.stringify(u));
-                window.location.href = '/guest-dashboard.html';
-                return;
-            }
+
+        const checkOut = parseCheckOut(u.reservedDates || '');
+        if (!checkOut) return;
+
+        const hondurasNow = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        if (checkOut < hondurasNow) {
+            // La reserva ya expiró según localStorage — limpiar y redirigir sin esperar al servidor
+            clearReservationFromUser(u);
+            window.location.href = '/guest-dashboard.html';
         }
     })();
+
+    // Extrae la fecha de checkout de "dd-MM-yyyy - dd-MM-yyyy"
+    // Retorna un Date UTC o null si el formato es inválido.
+    function parseCheckOut(datesStr) {
+        if (!datesStr) return null;
+        // Tomar la segunda parte después del separador " - "
+        const parts = datesStr.split(' - ');
+        if (parts.length < 2) return null;
+        const [dd, mm, yyyy] = parts[1].trim().split('-');
+        if (!dd || !mm || !yyyy || dd.length > 2 || mm.length > 2 || yyyy.length !== 4) return null;
+        const d = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T00:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Limpia los campos de reserva del usuario en localStorage
+    function clearReservationFromUser(u) {
+        u.hasReserved    = false;
+        u.reservedRoomId = null;
+        u.reservedDates  = null;
+        localStorage.setItem('probook_user', JSON.stringify(u));
+    }
 
     loadReservation();
 
@@ -220,12 +225,7 @@
 
             if (hasExpired || isCancelled) {
                 const u = getUser();
-                if (u) {
-                    u.hasReserved    = false;
-                    u.reservedRoomId = null;
-                    u.reservedDates  = null;
-                    localStorage.setItem('probook_user', JSON.stringify(u));
-                }
+                if (u) clearReservationFromUser(u);
                 window.location.href = '/guest-dashboard.html';
                 return;
             }
@@ -233,12 +233,7 @@
             renderReservation(r);
         } catch {
             const u = getUser();
-            if (u) {
-                u.hasReserved    = false;
-                u.reservedRoomId = null;
-                u.reservedDates  = null;
-                localStorage.setItem('probook_user', JSON.stringify(u));
-            }
+            if (u) clearReservationFromUser(u);
             window.location.href = '/guest-dashboard.html';
         }
     }
@@ -266,10 +261,6 @@
                             <div class="existing-detail-label">Noches</div>
                             <div class="existing-detail-value">${r.nights}</div>
                         </div>
-                    </div>
-                    <div class="immutable-notice">
-                        🔒 Esta reserva no puede modificarse ni cancelarse.
-                        Si necesitas asistencia, comunicate con el gerente del hotel.
                     </div>
                 </div>`;
     }

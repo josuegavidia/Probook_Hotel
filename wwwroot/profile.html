@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProBook - Mi Perfil</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            border-radius: var(--radius-lg);
+            padding: 2rem 2.5rem;
+            color: white;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 180px; height: 180px;
+            background: rgba(212,168,83,0.15);
+            border-radius: 50%;
+        }
+
+        .profile-avatar {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display);
+            font-size: 1.8rem; font-weight: 700;
+            color: white; flex-shrink: 0;
+            border: 3px solid rgba(255,255,255,0.35);
+            position: relative; z-index: 1;
+        }
+
+        .profile-info { position: relative; z-index: 1; }
+        .profile-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .profile-email { color: rgba(255,255,255,0.75); font-size: 0.875rem; }
+        .profile-since { color: rgba(255,255,255,0.6); font-size: 0.78rem; margin-top: 0.2rem; }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 700px) { .profile-grid { grid-template-columns: 1fr; } }
+
+        .profile-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .profile-card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .profile-card-body { padding: 1.25rem 1.5rem; }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .stat-row:last-child { border-bottom: none; }
+        .stat-row-label { color: var(--text-muted); }
+        .stat-row-value { font-weight: 700; color: var(--text); }
+
+        .profile-card-full { grid-column: 1 / -1; }
+
+
+
+
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/guest-dashboard.html" class="navbar-brand">Pro<span>Book</span></a>
+    <div id="nav-user" class="navbar-user"></div>
+</nav>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-label">Mi cuenta</div>
+            <a href="/guest-dashboard.html" class="sidebar-link">🏠 Inicio</a>
+            <a href="/rooms-list.html" class="sidebar-link">🏨 Habitaciones</a>
+            <a href="/reservation.html" class="sidebar-link" id="sidebar-reserve">📅 Reservar</a>
+            <a href="/profile.html" class="sidebar-link active">👤 Mi perfil</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Cuenta</div>
+            <button class="sidebar-link" onclick="logout()">🚪 Cerrar sesion</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <div id="alert-container" style="margin-bottom:1rem"></div>
+
+        <!-- Header del perfil -->
+        <div class="profile-header" id="profile-header">
+            <div class="profile-avatar" id="profile-avatar">?</div>
+            <div class="profile-info">
+                <div class="profile-name" id="profile-name">Cargando...</div>
+                <div class="profile-email" id="profile-email"></div>
+                <div class="profile-since" id="profile-since"></div>
+            </div>
+        </div>
+
+        <div class="profile-grid">
+
+            <!-- Editar datos -->
+            <div class="profile-card">
+                <div class="profile-card-header">✏️ Editar perfil</div>
+                <div class="profile-card-body">
+                    <div class="form-group">
+                        <label class="form-label">Nombre completo</label>
+                        <input type="text" id="input-fullname" class="form-control" placeholder="Tu nombre completo">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label">Correo electrónico</label>
+                        <input type="text" id="input-email" class="form-control" disabled
+                               style="opacity:0.6;cursor:not-allowed" title="El correo no se puede cambiar">
+                        <span class="form-hint">El correo no se puede modificar</span>
+                    </div>
+                    <div style="margin-top:1.25rem">
+                        <button id="btn-save-profile" class="btn btn-primary" onclick="saveProfile()">
+                            Guardar cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de actividad -->
+            <div class="profile-card">
+                <div class="profile-card-header">📊 Resumen de actividad</div>
+                <div class="profile-card-body" id="stats-body">
+                    <div class="text-center" style="padding:1rem">
+                        <span class="spinner spinner-primary"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="profile-card">
+                <div class="profile-card-header">🔑 Seguridad</div>
+                <div class="profile-card-body">
+                    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.5">
+                        Cambia tu contraseña regularmente para mantener tu cuenta segura.
+                        Necesitarás ingresar tu contraseña actual.
+                    </p>
+                    <button class="btn btn-outline" onclick="openChangePasswordModal()">
+                        🔑 Cambiar contraseña
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div id="change-pwd-modal-root"></div>
+
+<script src="/js/app.js"></script>
+<script>
+    requireAuth('guest');
+    renderNavbar('guest');
+
+    // Inicializar el modal de cambio de contraseña apenas carga la página
+    // para garantizar que el div raíz ya está en el DOM cuando se llama.
+    document.addEventListener('DOMContentLoaded', initChangePasswordModal);
+
+    const user = getUser();
+
+    // Mostrar datos del usuario desde localStorage inmediatamente
+    if (user) {
+        const initials = (user.fullname || 'H').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        document.getElementById('profile-avatar').textContent  = initials;
+        document.getElementById('profile-name').textContent    = user.fullname || '—';
+        document.getElementById('profile-email').textContent   = user.email || '';
+        document.getElementById('input-fullname').value        = user.fullname || '';
+        document.getElementById('input-email').value           = user.email || '';
+
+        // Mostrar sidebar correcto
+        if (user.hasReserved) {
+            document.getElementById('sidebar-reserve').classList.add('hidden');
+        }
+    }
+
+    // Cargar stats de historial
+    loadStats();
+
+    async function loadStats() {
+        const body = document.getElementById('stats-body');
+        try {
+            const data         = await apiGet('/Reservations/my-history');
+            const reservations = data.reservations || [];
+            const hondurasNow  = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+            const total      = reservations.length;
+            const completed  = reservations.filter(r => {
+                const p = r.checkOutDate.split('-');
+                return r.status !== 'cancelled' && new Date(`${p[2]}-${p[1]}-${p[0]}T00:00:00Z`) < hondurasNow;
+            }).length;
+            const cancelled  = reservations.filter(r => r.status === 'cancelled').length;
+            const totalSpent = reservations
+                .filter(r => r.status !== 'cancelled')
+                .reduce((s, r) => s + (r.totalCost || 0), 0);
+            const totalNights = reservations
+                .filter(r => r.status !== 'cancelled')
+                .reduce((s, r) => s + (r.nights || 0), 0);
+
+            // Reseñas dejadas
+            let reviewCount = 0;
+            try {
+                const revData = await apiGet('/Rooms/all-reviews?limit=100');
+                reviewCount = (revData.reviews || []).filter(r => r.userId === user?.id).length;
+            } catch { /* ok */ }
+
+            body.innerHTML = `
+                <div class="stat-row">
+                    <span class="stat-row-label">Total reservas</span>
+                    <span class="stat-row-value">${total}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Estadías completadas</span>
+                    <span class="stat-row-value">${completed}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Canceladas</span>
+                    <span class="stat-row-value">${cancelled}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Noches totales</span>
+                    <span class="stat-row-value">${totalNights}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Total gastado</span>
+                    <span class="stat-row-value" style="color:var(--primary)">${formatCurrency(totalSpent)}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Reseñas dejadas</span>
+                    <span class="stat-row-value">${reviewCount}</span>
+                </div>`;
+        } catch {
+            body.innerHTML = '<div class="text-center text-muted" style="padding:1rem">No se pudo cargar el resumen.</div>';
+        }
+    }
+
+    async function saveProfile() {
+        const fullname = document.getElementById('input-fullname').value.trim();
+        const btn      = document.getElementById('btn-save-profile');
+
+        if (!fullname) {
+            showAlert('alert-container', 'El nombre no puede estar vacío.', 'danger');
+            return;
+        }
+
+        if (fullname === user?.fullname) {
+            showAlert('alert-container', 'No hay cambios que guardar.', 'warning');
+            return;
+        }
+
+        setLoading(btn, true);
+        clearAlert('alert-container');
+
+        try {
+            await apiPut('/Auth/profile', { fullname });
+
+            // Actualizar localStorage
+            if (user) {
+                user.fullname = fullname;
+                localStorage.setItem('probook_user', JSON.stringify(user));
+            }
+
+            // Actualizar UI
+            const initials = fullname.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+            document.getElementById('profile-avatar').textContent = initials;
+            document.getElementById('profile-name').textContent   = fullname;
+
+            showAlert('alert-container', '✅ Nombre actualizado correctamente.', 'success');
+        } catch (err) {
+            showAlert('alert-container', err.message || 'Error al guardar.', 'danger');
+        } finally {
+            setLoading(btn, false);
+        }
+    }
+</script>
+</body>
+</html>

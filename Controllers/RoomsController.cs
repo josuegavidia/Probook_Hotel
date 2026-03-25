@@ -297,6 +297,7 @@ public class RoomsController : ControllerBase
                     {
                         id         = doc.Id,
                         roomNumber = d.ContainsKey("RoomNumber") ? d["RoomNumber"].ToString() : "",
+                        userId     = d.ContainsKey("UserId")     ? d["UserId"].ToString()     : "",
                         userName   = d.ContainsKey("UserName")   ? d["UserName"].ToString()   : "Huesped",
                         stars      = d.ContainsKey("Stars")      ? Convert.ToInt32(d["Stars"]) : 0,
                         comment    = d.ContainsKey("Comment")    ? d["Comment"].ToString()    : "",
@@ -309,7 +310,7 @@ public class RoomsController : ControllerBase
                 .Where(r => r.stars > 0 && !string.IsNullOrWhiteSpace(r.comment))
                 .OrderByDescending(r => r.createdAtSort)
                 .Take(Math.Min(limit, 50))
-                .Select(r => new { r.id, r.roomNumber, r.userName, r.stars, r.comment, r.createdAt })
+                .Select(r => new { r.id, r.userId, r.roomNumber, r.userName, r.stars, r.comment, r.createdAt })
                 .ToList();
 
             return Ok(new { total = reviews.Count, reviews });

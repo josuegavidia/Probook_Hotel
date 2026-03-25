@@ -8,6 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProBook - Huespedes</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <style>
         .summary-cards {
             display: grid;
@@ -169,19 +173,79 @@
         .sort-icon.desc { opacity: 1; }
         th.sort-active  { color: var(--primary); }
 
-        [data-theme="dark"] .filter-btn {
-            background: #1A1D26 !important;
-            border-color: #2A2D3A;
-            color: #A0A8B8;
+        /* ---- Paginación ---- */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1rem;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        [data-theme="dark"] .filter-btn.active {
-            background: #4A90C4 !important;
+
+        .pagination-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .page-btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 0.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            color: var(--text);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
             color: white;
         }
-        [data-theme="dark"] .confirm-modal {
-            background: #1A1D26;
-            border-color: #2A2D3A;
+
+        .page-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
         }
+
+        .page-size-select {
+            font-size: 0.8rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.2rem 0.5rem;
+            background: white;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+
+
+
+
+
+
+
+
 
         .reserve-room-option {
             background: var(--bg);
@@ -197,14 +261,8 @@
             border-color: var(--primary);
             background: rgba(44,95,138,0.06);
         }
-        [data-theme="dark"] .reserve-room-option {
-            background: #12141c;
-            border-color: #2A2D3A;
-        }
-        [data-theme="dark"] .reserve-room-option:hover {
-            border-color: #4A90C4;
-            background: rgba(74,144,196,0.08);
-        }
+
+
     </style>
 </head>
 <body>
@@ -308,6 +366,22 @@
                     </tbody>
                 </table>
             </div>
+            <!-- Barra de paginación -->
+            <div class="pagination-bar" id="pagination-bar" style="display:none">
+                <div class="pagination-info" id="pagination-info"></div>
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text-muted)">
+                        Por página:
+                        <select class="page-size-select" id="page-size-select" onchange="changePageSize(this.value)">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">Todos</option>
+                        </select>
+                    </div>
+                    <div class="pagination-controls" id="pagination-controls"></div>
+                </div>
+            </div>
         </div>
     </main>
 </div>
@@ -368,6 +442,36 @@
     </div>
 </div>
 
+<!-- Modal detalle de huesped -->
+<div id="guest-detail-modal" class="confirm-modal-overlay">
+    <div class="confirm-modal" style="max-width:580px;max-height:85vh;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-shrink:0">
+            <div>
+                <div class="confirm-modal-title" id="guest-detail-name" style="margin-bottom:0.15rem"></div>
+                <div id="guest-detail-email" style="font-size:0.82rem;color:var(--text-muted)"></div>
+            </div>
+            <button onclick="closeGuestDetail()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);line-height:1">×</button>
+        </div>
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-shrink:0">
+            <button id="gd-tab-res" onclick="switchGuestTab('res')"
+                    style="flex:1;padding:0.55rem;border:none;background:none;font-weight:600;font-size:0.83rem;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer">
+                📋 Reservas
+            </button>
+            <button id="gd-tab-rev" onclick="switchGuestTab('rev')"
+                    style="flex:1;padding:0.55rem;border:none;background:none;font-weight:600;font-size:0.83rem;color:var(--text-muted);border-bottom:2px solid transparent;cursor:pointer">
+                ⭐ Reseñas
+            </button>
+        </div>
+        <div id="gd-body-res" style="overflow-y:auto;flex:1">
+            <div class="text-center" style="padding:2rem"><span class="spinner spinner-primary"></span></div>
+        </div>
+        <div id="gd-body-rev" style="overflow-y:auto;flex:1;display:none">
+            <div class="text-center" style="padding:2rem"><span class="spinner spinner-primary"></span></div>
+        </div>
+    </div>
+</div>
+
 <script src="/js/app.js"></script>
 <script>
     requireAuth('manager');
@@ -378,6 +482,9 @@
     let pendingAction = null; // { type: 'cancel'|'block', id, name }
     let sortColumn    = 'fullname';
     let sortDirection = 'asc'; // 'asc' | 'desc'
+    let currentPage   = 1;
+    let pageSize      = 20;
+    let filteredList  = []; // resultado de filtros + sort, antes de paginar
 
     loadGuests();
     // Mostrar icono de ordenamiento inicial
@@ -392,7 +499,10 @@
             document.getElementById('with-reservation').textContent = data.totalWithReservation;
             document.getElementById('without-reservation').textContent = data.totalWithoutReservation;
 
-            renderGuests(allGuests);
+            // Inicializar lista filtrada y renderizar primera página
+            filteredList = sortGuests(allGuests);
+            currentPage  = 1;
+            renderPage();
         } catch (error) {
             document.getElementById('guests-table').innerHTML =
                 `<tr><td colspan="7" class="text-center text-muted" style="padding:2rem">
@@ -439,8 +549,8 @@
 
             return `
             <tr>
-                <td>
-                    <div style="font-weight:600">${g.fullname}</div>
+                <td style="cursor:pointer" onclick="openGuestDetail('${g.userId}','${escapeHtml(g.fullname)}')">
+                    <div style="font-weight:600;color:var(--primary)">${g.fullname}</div>
                     <div class="guest-email">${g.email}</div>
                 </td>
                 <td>${getStatusBadge(g.reservationStatus)}</td>
@@ -611,12 +721,198 @@
             return matchesSearch && matchesFilter;
         });
 
-        renderGuests(sortGuests(filtered));
+        filteredList = sortGuests(filtered);
+        currentPage  = 1;
+        renderPage();
+    }
+
+    // ---- Paginación ----
+
+    function renderPage() {
+        const total     = filteredList.length;
+        const realSize  = pageSize === 0 ? total : pageSize; // 0 = todos
+        const totalPages = realSize > 0 ? Math.ceil(total / realSize) : 1;
+
+        // Asegurar página válida
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        if (currentPage < 1)          currentPage = 1;
+
+        const start  = (currentPage - 1) * realSize;
+        const slice  = realSize > 0 ? filteredList.slice(start, start + realSize) : filteredList;
+
+        renderGuests(slice);
+        renderPaginationControls(total, totalPages);
+    }
+
+    function renderPaginationControls(total, totalPages) {
+        const bar      = document.getElementById('pagination-bar');
+        const info     = document.getElementById('pagination-info');
+        const controls = document.getElementById('pagination-controls');
+
+        if (total === 0 || totalPages <= 1) {
+            bar.style.display = 'none';
+            return;
+        }
+
+        bar.style.display = 'flex';
+
+        const realSize = pageSize === 0 ? total : pageSize;
+        const start    = Math.min((currentPage - 1) * realSize + 1, total);
+        const end      = Math.min(currentPage * realSize, total);
+        info.textContent = `Mostrando ${start}–${end} de ${total} huéspedes`;
+
+        // Generar botones: prev, páginas, next
+        const pages = [];
+        pages.push(`<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`);
+
+        // Siempre mostrar primera, última y las cercanas a la actual
+        const range = new Set([1, totalPages]);
+        for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) range.add(i);
+        let prev = 0;
+        [...range].sort((a,b)=>a-b).forEach(p => {
+            if (prev && p - prev > 1) pages.push('<span style="padding:0 0.25rem;color:var(--text-muted)">…</span>');
+            pages.push(`<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`);
+            prev = p;
+        });
+
+        pages.push(`<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`);
+        controls.innerHTML = pages.join('');
+    }
+
+    function goToPage(page) {
+        const realSize   = pageSize === 0 ? filteredList.length : pageSize;
+        const totalPages = realSize > 0 ? Math.ceil(filteredList.length / realSize) : 1;
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderPage();
+        // Scroll suave al top de la tabla
+        document.getElementById('guests-table')?.closest('.card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function changePageSize(val) {
+        pageSize    = parseInt(val) || 0;
+        currentPage = 1;
+        renderPage();
     }
 
     // Escapa caracteres especiales para no romper el HTML en los atributos onclick
     function escapeHtml(str) {
         return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // ---- Detalle de huesped ----
+
+    let _gdCurrentUserId = null;
+    let _gdTab = 'res';
+
+    async function openGuestDetail(userId, fullname) {
+        _gdCurrentUserId = userId;
+        _gdTab = 'res';
+
+        // Encontrar email del guest en la lista cargada
+        const guest = allGuests.find(g => g.userId === userId);
+        document.getElementById('guest-detail-name').textContent  = fullname;
+        document.getElementById('guest-detail-email').textContent = guest?.email || '';
+
+        // Reset tabs
+        switchGuestTab('res', false);
+
+        document.getElementById('guest-detail-modal').classList.add('active');
+        loadGuestReservations(userId);
+    }
+
+    function closeGuestDetail() {
+        document.getElementById('guest-detail-modal').classList.remove('active');
+        _gdCurrentUserId = null;
+    }
+
+    function switchGuestTab(tab, load = true) {
+        _gdTab = tab;
+        const activeStyle   = 'color:var(--primary);border-bottom:2px solid var(--primary)';
+        const inactiveStyle = 'color:var(--text-muted);border-bottom:2px solid transparent';
+        document.getElementById('gd-tab-res').style.cssText += ';' + (tab === 'res' ? activeStyle : inactiveStyle);
+        document.getElementById('gd-tab-rev').style.cssText += ';' + (tab === 'rev' ? activeStyle : inactiveStyle);
+        document.getElementById('gd-body-res').style.display = tab === 'res' ? '' : 'none';
+        document.getElementById('gd-body-rev').style.display = tab === 'rev' ? '' : 'none';
+        if (load && _gdCurrentUserId) {
+            if (tab === 'rev') loadGuestReviews(_gdCurrentUserId);
+        }
+    }
+
+    async function loadGuestReservations(userId) {
+        const body = document.getElementById('gd-body-res');
+        body.innerHTML = '<div class="text-center" style="padding:2rem"><span class="spinner spinner-primary"></span></div>';
+        try {
+            // Usar el historial de reservas del endpoint all reservations filtrado por userId
+            const all = await apiGet('/Reservations');
+            const reservations = (Array.isArray(all) ? all : [])
+                .filter(r => r.userId === userId)
+                .sort((a, b) => b.timestamp?.localeCompare(a.timestamp || '') || 0);
+
+            if (!reservations.length) {
+                body.innerHTML = '<div class="text-center text-muted" style="padding:2rem">Este huesped no tiene reservas registradas.</div>';
+                return;
+            }
+
+            const hondurasNow = new Date(Date.now() - 6 * 60 * 60 * 1000);
+            body.innerHTML = reservations.map(r => {
+                const parts = r.checkOutDate.split('-');
+                const checkOut = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`);
+                const isCancelled = r.status === 'cancelled';
+                const isCompleted = !isCancelled && checkOut < hondurasNow;
+                const effStatus   = isCancelled ? 'cancelled' : isCompleted ? 'completed' : 'confirmed';
+                return `
+                <div style="background:var(--bg);border-radius:var(--radius-sm);padding:0.85rem;border:1px solid var(--border);margin-bottom:0.6rem">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.4rem">
+                        <div>
+                            <strong>Hab. ${r.roomNumber}</strong>
+                            <span style="font-size:0.78rem;color:var(--text-muted);margin-left:6px">${r.roomType}</span>
+                        </div>
+                        ${getStatusBadge(effStatus)}
+                    </div>
+                    <div style="font-size:0.82rem;color:var(--text-muted)">
+                        ${formatDate(r.checkInDate)} → ${formatDate(r.checkOutDate)} · ${r.nights} noche${r.nights!==1?'s':''}
+                    </div>
+                    <div style="font-size:0.82rem;font-weight:600;color:var(--primary);margin-top:0.2rem">
+                        ${formatCurrency(r.totalCost)}
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (err) {
+            body.innerHTML = `<div class="text-center text-muted" style="padding:2rem">Error: ${err.message}</div>`;
+        }
+    }
+
+    async function loadGuestReviews(userId) {
+        const body = document.getElementById('gd-body-rev');
+        body.innerHTML = '<div class="text-center" style="padding:2rem"><span class="spinner spinner-primary"></span></div>';
+        try {
+            const data    = await apiGet('/Rooms/all-reviews?limit=100');
+            // Filtrar por userId (campo ahora incluido en el response)
+            const reviews = (data.reviews || []).filter(r => r.userId === userId);
+
+            if (!reviews.length) {
+                body.innerHTML = '<div class="text-center text-muted" style="padding:2rem">Este huesped no ha dejado reseñas.</div>';
+                return;
+            }
+
+            body.innerHTML = reviews.map(r => {
+                const stars = Array.from({length:5},(_,i)=>'<span style="color:'+(i<r.stars?'#f59e0b':'#d1d5db')+'">★</span>').join('');
+                return `
+                <div style="background:var(--bg);border-radius:var(--radius-sm);padding:0.85rem;border:1px solid var(--border);margin-bottom:0.6rem">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+                        <div>
+                            <strong style="font-size:0.85rem">Hab. ${r.roomNumber}</strong>
+                            <span style="margin-left:6px">${stars}</span>
+                        </div>
+                        <span style="font-size:0.72rem;color:var(--text-muted)">${r.createdAt}</span>
+                    </div>
+                    ${r.comment ? `<p style="font-size:0.82rem;color:var(--text-light);margin:0;font-style:italic">"${r.comment}"</p>` : ''}
+                </div>`;
+            }).join('');
+        } catch (err) {
+            body.innerHTML = `<div class="text-center text-muted" style="padding:2rem">Error: ${err.message}</div>`;
+        }
     }
 
     // ---- Reservar en nombre del huesped (solo manager) ----
@@ -747,5 +1043,6 @@
         }
     }
 </script>
+<div id="change-pwd-modal-root"></div>
 </body>
 </html>
