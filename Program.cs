@@ -39,7 +39,31 @@ builder.Services.AddControllers();
 // Configuracion de JWT
 // --------------------------------------------------------
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
+
+// Obtener la clave secreta de User Secrets o Variables de Entorno
+// Orden de prioridad:
+// 1. Variable de entorno JWT__SECRETKEY (producción)
+// 2. User Secrets (desarrollo)
+// 3. appsettings.json (vacío - fallback que falla intencionalmente)
+var secretKey = builder.Configuration["Jwt:SecretKey"];
+
+// Validar que la clave secreta exista y no esté vacía
+if (string.IsNullOrWhiteSpace(secretKey))
+{
+    throw new InvalidOperationException(
+        "JWT SecretKey no configurada. " +
+        "Para desarrollo, usa: dotnet user-secrets set \"Jwt:SecretKey\" \"tu_clave_aqui\". " +
+        "Para producción, configura la variable de entorno JWT__SECRETKEY.");
+}
+
+// Validar longitud mínima de la clave (256 bits = 32 caracteres)
+if (secretKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        $"JWT SecretKey debe tener al menos 32 caracteres. Longitud actual: {secretKey.Length}");
+}
+
+var keyBytes = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -60,7 +84,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
         RoleClaimType = "role",
         NameClaimType = "name"
     };
@@ -112,12 +136,41 @@ builder.Services.AddSwaggerGen(options =>
 // --------------------------------------------------------
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    if (builder.Environment.IsDevelopment())
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+        // Desarrollo: permitir todo para facilitar el desarrollo local
+        options.AddPolicy("CorsPolicy", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    }
+    else
+    {
+        // Producción: restringir a orígenes específicos
+        // Configura los orígenes permitidos mediante:
+        // 1. Variable de entorno: AllowedOrigins__0, AllowedOrigins__1, etc.
+        // 2. appsettings.Production.json: "AllowedOrigins": ["https://tuapp.com"]
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        if (allowedOrigins.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "No se han configurado orígenes permitidos para CORS en producción. " +
+                "Configura 'AllowedOrigins' en appsettings.Production.json o mediante variables de entorno " +
+                "(AllowedOrigins__0, AllowedOrigins__1, etc.)");
+        }
+
+        options.AddPolicy("CorsPolicy", policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials(); // Permite cookies/credenciales si es necesario
+        });
+    }
 });
 
 // --------------------------------------------------------
@@ -132,7 +185,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors("CorsPolicy");
 
 // Servir archivos estaticos desde la carpeta wwwroot
 // Permite acceder a los HTML desde https://localhost:puerto/login.html

@@ -878,7 +878,10 @@
     <p>ProBook &copy; 2026 &mdash; Desarrollado por Josue Gavidia</p>
 </footer>
 
-<script src="/js/app.js"></script>
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/ui.js"></script>
 <script>initTheme(); document.addEventListener("DOMContentLoaded", updateThemeBtn);</script>
 <script>
     // ============================================================
@@ -1071,36 +1074,9 @@
 </script>
 
 <script>
-    // Verificar si hay sesion activa y si el token sigue siendo valido
-    async function checkSession() {
-        if (!isLoggedIn()) return;
-
-        try {
-            // Hacer una peticion al backend para validar el token
-            const response = await fetch(`${API_URL}/Test/health`, {
-                headers: { 'Authorization': `Bearer ${getToken()}` }
-            });
-
-            if (response.ok) {
-                //Verificar
-                // Token valido, redirigir al dashboard
-                const role = getRole();
-                window.location.href = role === 'manager'
-                    ? '/manager-dashboard.html'
-                    : '/guest-dashboard.html';
-            } else {
-                // Token invalido o expirado, limpiar sesion
-                localStorage.removeItem('probook_token');
-                localStorage.removeItem('probook_user');
-            }
-        } catch (error) {
-            // El servidor no esta disponible, limpiar sesion
-            localStorage.removeItem('probook_token');
-            localStorage.removeItem('probook_user');
-        }
-    }
-
-    checkSession();
+    // Si ya hay sesion activa, redirigir al dashboard correspondiente.
+    // La logica vive en app.js (redirectIfLoggedIn) para no duplicarla.
+    redirectIfLoggedIn();
 </script>
 </body>
 </html>
