@@ -22,4 +22,12 @@
     <Folder Include="DTOs\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <StaticContent Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
