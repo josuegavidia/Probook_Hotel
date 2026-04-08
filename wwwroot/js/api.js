@@ -81,3 +81,95 @@ async function apiDelete(endpoint) {
     if (!response.ok) throw new Error(data?.message || 'Error en la peticion');
     return data;
 }
+
+// ============================================================
+// FORMAT CURRENCY - Lee desde localStorage en cada llamada
+// ============================================================
+function formatCurrency(amount) {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+        return 'L. 0.00';
+    }
+
+    // ✅ LEER DESDE LOCALSTORAGE EN CADA LLAMADA
+    let currency = null;
+    try {
+        const stored = localStorage.getItem('probook_currency');
+        if (stored) {
+            currency = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.warn('⚠️ Error al cargar moneda:', e);
+    }
+
+    // Fallback a Lempira si no hay datos
+    if (!currency) {
+        currency = {
+            symbol: 'L.',
+            locale: 'es-HN',
+            code: 'HNL'
+        };
+    }
+
+    try {
+        const formatted = amount.toLocaleString(
+            currency.locale || 'es-HN',
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        );
+        return `${currency.symbol} ${formatted}`;
+    } catch (e) {
+        console.warn('⚠️ Error formateando currency:', e);
+        return `${currency.symbol} ${amount.toFixed(2)}`;
+    }
+}
+
+// ============================================================
+// GET TAX RATE - Lee desde localStorage
+// ============================================================
+function getTaxRate() {
+    try {
+        const stored = localStorage.getItem('probook_currency');
+        if (stored) {
+            const currency = JSON.parse(stored);
+            return currency.taxRate || 0.15;
+        }
+    } catch (e) {
+        console.warn('⚠️ Error al cargar tax rate:', e);
+    }
+    return 0.15; // Fallback
+}
+
+// ============================================================
+// FORMAT DATE - DD-MM-YYYY
+// ============================================================
+function formatDate(apiDate) {
+    // apiDate formato: DD-MM-YYYY
+    if (!apiDate || typeof apiDate !== 'string') return '--';
+    const parts = apiDate.split('-');
+    if (parts.length !== 3) return apiDate;
+    return apiDate; // Ya está en formato correcto
+}
+
+// ============================================================
+// INPUT DATE TO API - Convierte input date (YYYY-MM-DD) a API (DD-MM-YYYY)
+// ============================================================
+function inputDateToApi(inputDate) {
+    // inputDate: YYYY-MM-DD
+    // output: DD-MM-YYYY
+    if (!inputDate) return null;
+    const [year, month, day] = inputDate.split('-');
+    return `${day}-${month}-${year}`;
+}
+
+// ============================================================
+// API DATE TO INPUT - Convierte API (DD-MM-YYYY) a input date (YYYY-MM-DD)
+// ============================================================
+function apiDateToInput(apiDate) {
+    // apiDate: DD-MM-YYYY
+    // output: YYYY-MM-DD
+    if (!apiDate) return null;
+    const [day, month, year] = apiDate.split('-');
+    return `${year}-${month}-${day}`;
+}

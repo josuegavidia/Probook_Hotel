@@ -2,7 +2,10 @@
 // manager-dashboard.js — Lógica del panel del gerente
 // Requiere: auth.js, api.js, ui.js (cargados antes en el HTML)
 // ============================================================
-
+// ============================================================
+// CARGAR MONEDA AL INICIAR PÁGINA
+// ============================================================
+loadCurrencyOnPageLoad();
 requireAuth('manager');
 renderNavbar('manager');
 

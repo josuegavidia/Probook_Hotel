@@ -452,9 +452,12 @@
         loadReport();
     }
 
+    // ============================================================
+    // CARGAR REPORTE - CORREGIDO
+    // ============================================================
     async function loadReport() {
         try {
-            let url = '/Reports/statistics';
+            let url = '/Reports/statistics'; 
             const start = document.getElementById('period-start').value;
             const end = document.getElementById('period-end').value;
 
@@ -463,7 +466,17 @@
             if (end) params.push(`periodEnd=${inputDateToApi(end)}`);
             if (params.length > 0) url += '?' + params.join('&');
 
+            console.log("📥 Cargando reporte desde:", url);
             const data = await apiGet(url);
+
+            console.log("✅ Datos del reporte:", data);
+
+            // Validar que los datos existan
+            if (!data || !data.reservationsByRoomType) {
+                console.warn("⚠️ Datos incompletos del reporte");
+                showDefaultReport();
+                return;
+            }
 
             renderStats(data);
             renderCharts(data);
@@ -473,40 +486,85 @@
             _lastData = data;
             document.getElementById('export-btn').disabled = false;
 
+            const startDate = start
+                ? formatDate(inputDateToApi(start))
+                : formatDate(data.periodStart);
+            const endDate = end
+                ? formatDate(inputDateToApi(end))
+                : formatDate(data.periodEnd);
+
             document.getElementById('report-meta').textContent =
-                `Periodo: ${formatDate(inputDateToApi(start) || data.periodStart.split('T')[0].split('-').reverse().join('-'))}
-                     — ${formatDate(inputDateToApi(end) || data.periodEnd.split('T')[0].split('-').reverse().join('-'))}
-                     | Generado: ${new Date().toLocaleString('es-HN')}`;
+                `Periodo: ${startDate} — ${endDate} | Generado: ${new Date().toLocaleString('es-HN')}`;
+
+            console.log("✅ Reporte cargado exitosamente");
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error cargando reporte:', error);
+            showDefaultReport();
         }
     }
 
-    function renderStats(data) {
-        document.getElementById('stat-rooms').textContent = data.totalRooms;
-        document.getElementById('stat-nights').textContent = data.totalNightsReserved;
-        document.getElementById('stat-occupancy').textContent = data.occupancyPercentage + '%';
-        document.getElementById('stat-revenue').textContent = formatCurrency(data.totalRevenue);
+    // ---- Mostrar reporte vacío con mensaje ----
+    function showDefaultReport() {
+        document.getElementById('stat-rooms').textContent = '--';
+        document.getElementById('stat-nights').textContent = '--';
+        document.getElementById('stat-occupancy').textContent = '--';
+        document.getElementById('stat-revenue').textContent = '--';
+
+        const tbody = document.getElementById('results-table');
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:2rem">
+            ⚠️ No hay datos disponibles. Intenta cambiar el periodo.
+        </td></tr>`;
+
+        // Limpiar gráficos anteriores
+        if (barChart) barChart.destroy();
+        if (pieChart) pieChart.destroy();
+        if (lineChart) lineChart.destroy();
     }
 
+    // ============================================================
+    // RENDERIZAR ESTADÍSTICAS - MEJORADO
+    // ============================================================
+    function renderStats(data) {
+        document.getElementById('stat-rooms').textContent = data.totalRooms || 0;
+        document.getElementById('stat-nights').textContent = data.totalNightsReserved || 0;
+        document.getElementById('stat-occupancy').textContent = (data.occupancyPercentage || 0) + '%';
+        document.getElementById('stat-revenue').textContent = formatCurrency(data.totalRevenue || 0);
+    }
+
+    // ============================================================
+    // RENDERIZAR GRÁFICOS - CORREGIDO
+    // ============================================================
     function renderCharts(data) {
-        const labels = Object.keys(data.reservationsByRoomType);
-        const reservations = Object.values(data.reservationsByRoomType);
-        const revenues = Object.values(data.revenueByRoomType);
-        const trendLabels = Object.keys(data.occupancyTrend);
-        const trendValues = Object.values(data.occupancyTrend);
+        const labels = Object.keys(data.reservationsByRoomType || {});
+        const reservations = Object.values(data.reservationsByRoomType || {});
+        const revenues = Object.values(data.revenueByRoomType || {});
+        const trendLabels = Object.keys(data.occupancyTrend || {});
+        const trendValues = Object.values(data.occupancyTrend || {});
         const colors = ['#2C5F8A', '#D4A853', '#2E7D5E', '#C0392B', '#8E44AD', '#E67E22'];
 
+        console.log("📊 Renderizando gráficos...");
+        console.log("  - Tipos:", labels);
+        console.log("  - Reservas por tipo:", reservations);
+        console.log("  - Ingresos por tipo:", revenues);
+        console.log("  - Tendencia:", trendLabels, trendValues);
+
+        // ---- Gráfico de barras ----
         if (barChart) barChart.destroy();
-        barChart = new Chart(document.getElementById('chart-bars'), {
+        const ctxBar = document.getElementById('chart-bars');
+        if (!ctxBar) {
+            console.error("❌ Canvas chart-bars no encontrado");
+            return;
+        }
+
+        barChart = new Chart(ctxBar, {
             type: 'bar',
             data: {
-                labels,
+                labels: labels.length > 0 ? labels : ['Sin datos'],
                 datasets: [{
                     label: 'Reservas',
-                    data: reservations,
-                    backgroundColor: colors.slice(0, labels.length),
+                    data: reservations.length > 0 ? reservations : [0],
+                    backgroundColor: colors.slice(0, Math.max(labels.length, 1)),
                     borderRadius: 8,
                     borderSkipped: false
                 }]
@@ -526,14 +584,21 @@
             }
         });
 
+        // ---- Gráfico circular (doughnut) ----
         if (pieChart) pieChart.destroy();
-        pieChart = new Chart(document.getElementById('chart-pie'), {
+        const ctxPie = document.getElementById('chart-pie');
+        if (!ctxPie) {
+            console.error("❌ Canvas chart-pie no encontrado");
+            return;
+        }
+
+        pieChart = new Chart(ctxPie, {
             type: 'doughnut',
             data: {
-                labels,
+                labels: labels.length > 0 ? labels : ['Sin datos'],
                 datasets: [{
-                    data: revenues,
-                    backgroundColor: colors.slice(0, labels.length),
+                    data: revenues.length > 0 ? revenues : [100],
+                    backgroundColor: colors.slice(0, Math.max(labels.length, 1)),
                     borderWidth: 3,
                     borderColor: 'white'
                 }]
@@ -550,14 +615,21 @@
             }
         });
 
+        // ---- Gráfico de línea ----
         if (lineChart) lineChart.destroy();
-        lineChart = new Chart(document.getElementById('chart-line'), {
+        const ctxLine = document.getElementById('chart-line');
+        if (!ctxLine) {
+            console.error("❌ Canvas chart-line no encontrado");
+            return;
+        }
+
+        lineChart = new Chart(ctxLine, {
             type: 'line',
             data: {
-                labels: trendLabels,
+                labels: trendLabels.length > 0 ? trendLabels : ['Sin datos'],
                 datasets: [{
                     label: 'Reservas',
-                    data: trendValues,
+                    data: trendValues.length > 0 ? trendValues : [0],
                     borderColor: '#2C5F8A',
                     backgroundColor: 'rgba(44, 95, 138, 0.08)',
                     borderWidth: 2.5,
@@ -582,12 +654,17 @@
                 }
             }
         });
+
+        console.log("✅ Gráficos renderizados");
     }
 
+    // ============================================================
+    // RENDERIZAR TABLA - MEJORADO
+    // ============================================================
     function renderTable(data) {
         const tbody = document.getElementById('results-table');
-        const types = Object.keys(data.reservationsByRoomType);
-        const totalRevenue = data.totalRevenue;
+        const types = Object.keys(data.reservationsByRoomType || {});
+        const totalRevenue = data.totalRevenue || 0;
 
         if (types.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:2rem">
@@ -596,8 +673,8 @@
         }
 
         tbody.innerHTML = types.map(type => {
-            const reservations = data.reservationsByRoomType[type];
-            const revenue = data.revenueByRoomType[type];
+            const reservations = data.reservationsByRoomType[type] || 0;
+            const revenue = data.revenueByRoomType[type] || 0;
             const avg = reservations > 0 ? (revenue / reservations) : 0;
             const participation = totalRevenue > 0
                 ? ((revenue / totalRevenue) * 100).toFixed(1) : 0;

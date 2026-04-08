@@ -125,7 +125,7 @@ function getStatusBadge(status) {
 }
 
 // ============================================================
-// MONEDA
+// MONEDA - Control centralizado
 // ============================================================
 
 window._currency = {
@@ -136,20 +136,59 @@ window._currency = {
     name:    'Lempira hondureño'
 };
 
+// Variables de control para evitar race conditions
+let _currencySettingsLoaded = false;
+let _currencySettingsLoading = false;
+let _currencyLoadTimeout = null;
+
+/**
+ * Carga la configuración de moneda del servidor
+ * Con protección contra llamadas múltiples simultáneas
+ */
 async function loadCurrencySettings() {
+    // Si ya está cargado, no hacer nada
+    if (_currencySettingsLoaded) {
+        console.log("✅ Configuración de moneda ya cargada");
+        return;
+    }
+
+    // Si se está cargando en este momento, esperar
+    if (_currencySettingsLoading) {
+        console.log("⏳ Configuración de moneda en progreso, esperando...");
+        return;
+    }
+
+    // Cancelar cualquier carga anterior pendiente
+    if (_currencyLoadTimeout) {
+        clearTimeout(_currencyLoadTimeout);
+    }
+
+    // Marcar como cargando
+    _currencySettingsLoading = true;
+
     try {
-        const res = await fetch(`${API_URL}/Settings/currency`);
-        if (res.ok) {
-            const data = await res.json();
-            window._currency = {
-                symbol:  data.symbol  || 'L.',
-                code:    data.code    || 'HNL',
-                locale:  data.locale  || 'es-HN',
-                taxRate: data.taxRate ?? 0.15,
-                name:    data.name    || ''
-            };
-        }
-    } catch { /* usar valores por defecto */ }
+        console.log("📥 Cargando configuración de moneda...");
+        const data = await apiGet('/Settings/currency');
+
+        // Actualizar configuración global
+        window._currency = {
+            symbol:  data.symbol || 'L.',
+            code:    data.code || 'HNL',
+            locale:  data.locale || 'es-HN',
+            taxRate: data.taxRate || 0.15,
+            name:    data.name || 'Lempira hondureño'
+        };
+
+        _currencySettingsLoaded = true;
+        console.log("✅ Configuración de moneda cargada:", window._currency);
+
+    } catch (error) {
+        console.error('❌ Error al cargar moneda:', error);
+        // No fallar la página por esto - mantener valores por defecto
+        _currencySettingsLoaded = false;
+    } finally {
+        _currencySettingsLoading = false;
+    }
 }
 
 function formatCurrency(amount) {
@@ -165,8 +204,22 @@ function getTaxRate() {
     return window._currency.taxRate ?? 0.15;
 }
 
-// Cargar configuración de moneda al arrancar
-loadCurrencySettings();
+// ============================================================
+// INICIALIZACIÓN DE MONEDA - Evitar conflictos en settings.html
+// ============================================================
+
+/**
+ * Detectar si estamos en settings.html
+ * Si lo estamos, NO cargar aquí (lo hará settings.html)
+ * Si no, cargar después de que el DOM esté listo
+ */
+if (!window.location.pathname.includes('settings.html')) {
+    // Solo cargar en páginas que NO sean settings.html
+    document.addEventListener('DOMContentLoaded', function() {
+        // Esperar un poco para no conflictuar con otras cargas
+        setTimeout(loadCurrencySettings, 500);
+    });
+}
 
 // ============================================================
 // NAVBAR Y SIDEBAR

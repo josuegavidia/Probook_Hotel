@@ -21,7 +21,7 @@
         }
 
         .summary-card {
-            background: white;
+            background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 1.5rem;
@@ -37,6 +37,7 @@
             margin-bottom: 1.25rem;
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
+            color: var(--text);
         }
 
         .summary-room {
@@ -71,7 +72,7 @@
         .summary-row-value { font-weight: 600; color: var(--text); }
 
         .summary-total {
-            background: rgba(44, 95, 138, 0.06);
+            background: rgba(91, 163, 217, 0.06);
             border-radius: var(--radius-sm);
             padding: 1rem;
             margin-top: 1rem;
@@ -90,8 +91,8 @@
         }
 
         .policy-card {
-            background: rgba(44, 95, 138, 0.05);
-            border: 1px solid rgba(44, 95, 138, 0.2);
+            background: rgba(91, 163, 217, 0.08);
+            border: 1px solid rgba(91, 163, 217, 0.2);
             border-radius: var(--radius-sm);
             padding: 0.85rem 1rem;
             font-size: 0.82rem;
@@ -112,17 +113,17 @@
         }
 
         .availability-ok {
-            background: rgba(46, 125, 94, 0.1);
+            background: rgba(78, 205, 196, 0.15);
             color: var(--success);
         }
 
         .availability-no {
-            background: rgba(220, 53, 69, 0.1);
+            background: rgba(255, 107, 107, 0.15);
             color: var(--danger);
         }
 
         .availability-checking {
-            background: rgba(44, 95, 138, 0.1);
+            background: rgba(91, 163, 217, 0.15);
             color: var(--primary);
         }
 
@@ -147,7 +148,7 @@
         }
 
         .voucher-modal-content {
-            background-color: white;
+            background-color: var(--bg-card);
             border-radius: var(--radius);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 90%;
@@ -157,6 +158,8 @@
             animation: slideUp 0.3s ease-out;
             max-height: 90vh;
             overflow-y: auto;
+            color: var(--text);
+            border: 1px solid var(--border);
         }
 
         @keyframes slideUp {
@@ -189,12 +192,12 @@
 
         .voucher-modal-close:hover {
             color: var(--text);
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: rgba(91, 163, 217, 0.1);
         }
 
         .voucher-summary {
-            background: rgba(44, 95, 138, 0.05);
-            border: 1px solid rgba(44, 95, 138, 0.2);
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             padding: 1.25rem;
             margin-bottom: 1.5rem;
@@ -204,7 +207,7 @@
             display: flex;
             justify-content: space-between;
             padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid var(--border);
             font-size: 0.9rem;
         }
 
@@ -224,8 +227,8 @@
 
         /* SECCIÓN DE CUENTAS BANCARIAS */
         .bank-accounts-section {
-            background: rgba(44, 95, 138, 0.08);
-            border: 1px solid rgba(44, 95, 138, 0.2);
+            background: rgba(91, 163, 217, 0.08);
+            border: 1px solid rgba(91, 163, 217, 0.2);
             border-radius: var(--radius-sm);
             padding: 1.25rem;
             margin: 1.5rem 0;
@@ -242,7 +245,7 @@
         }
 
         .bank-account {
-            background: white;
+            background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             padding: 1rem;
@@ -276,10 +279,11 @@
 
         .bank-detail-value {
             font-family: 'Courier New', monospace;
-            background: #f5f5f5;
+            background: var(--bg);
             padding: 0.25rem 0.5rem;
             border-radius: 3px;
             font-size: 0.8rem;
+            color: var(--text-light);
         }
 
         .copy-btn {
@@ -295,7 +299,7 @@
         }
 
         .copy-btn:hover {
-            color: var(--secondary);
+            color: var(--primary-light);
         }
 
         .file-upload-box {
@@ -306,16 +310,17 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin: 1.5rem 0;
+            background: var(--bg);
         }
 
         .file-upload-box:hover {
             border-color: var(--primary);
-            background: rgba(44, 95, 138, 0.05);
+            background: rgba(91, 163, 217, 0.06);
         }
 
         .file-upload-box.dragover {
             border-color: var(--primary);
-            background: rgba(44, 95, 138, 0.1);
+            background: rgba(91, 163, 217, 0.1);
         }
 
         .file-upload-icon {
@@ -342,8 +347,9 @@
             display: none;
             margin: 15px 0;
             padding: 12px;
-            background: #f0f0f0;
+            background: var(--bg);
             border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
         }
 
         .preview-image {
@@ -356,7 +362,7 @@
 
         .preview-info {
             font-size: 0.85rem;
-            color: #666;
+            color: var(--text-muted);
         }
 
         .alert {
@@ -383,27 +389,27 @@
         }
 
         .alert-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border-left-color: #0c5460;
+            background-color: rgba(91, 163, 217, 0.12);
+            color: var(--primary);
+            border-left-color: var(--primary);
         }
 
         .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-left-color: #28a745;
+            background-color: rgba(78, 205, 196, 0.12);
+            color: var(--success);
+            border-left-color: var(--success);
         }
 
         .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-left-color: #dc3545;
+            background-color: rgba(255, 107, 107, 0.12);
+            color: var(--danger);
+            border-left-color: var(--danger);
         }
 
         .alert-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-left-color: #ffc107;
+            background-color: rgba(240, 212, 154, 0.12);
+            color: var(--accent);
+            border-left-color: var(--accent);
         }
 
         .modal-footer {
@@ -414,10 +420,10 @@
         }
 
         .btn-cancel {
-            background: #e0e0e0;
-            color: #333;
+            background: var(--bg);
+            color: var(--text);
             padding: 0.75rem 1.5rem;
-            border: none;
+            border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-weight: 600;
@@ -425,8 +431,9 @@
         }
 
         .btn-cancel:hover {
-            background: #d0d0d0;
-            color: #000;
+            background: rgba(91, 163, 217, 0.08);
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         @media (max-width: 768px) {
@@ -439,61 +446,6 @@
                 width: 95%;
                 padding: 1.5rem;
             }
-        }
-
-        [data-theme="dark"] .voucher-modal-content {
-            background-color: #1e1e1e;
-            color: #ffffff;
-        }
-
-        [data-theme="dark"] .voucher-summary {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        [data-theme="dark"] .file-upload-box:hover {
-            background: rgba(74,144,196,0.1);
-        }
-
-        [data-theme="dark"] .file-preview {
-            background: #2a2a2a;
-        }
-
-        [data-theme="dark"] .bank-accounts-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        [data-theme="dark"] .bank-account {
-            background: #2a2a2a;
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        [data-theme="dark"] .bank-name {
-            color: #ffffff;
-        }
-
-        [data-theme="dark"] .bank-detail-label {
-            color: #ffffff;
-        }
-
-        [data-theme="dark"] .bank-detail-value {
-            background: #1a1a1a;
-            color: #e0e0e0;
-        }
-
-        [data-theme="dark"] .preview-info {
-            color: #bbb;
-        }
-
-        [data-theme="dark"] .btn-cancel {
-            background: #444;
-            color: #fff;
-        }
-
-        [data-theme="dark"] .btn-cancel:hover {
-            background: #555;
-            color: #fff;
         }
     </style>
 </head>
@@ -1203,6 +1155,28 @@
             closeVoucherModal();
         }
     });
+
+    // ============================================================
+    // CARGAR MONEDA AL INICIAR
+    // ============================================================
+    function loadCurrencyFromStorage() {
+        const stored = localStorage.getItem('probook_currency');
+        if (stored) {
+            try {
+                window._currency = JSON.parse(stored);
+                console.log('✅ Moneda cargada:', window._currency);
+                // Actualizar el resumen si ya hay datos
+                if (typeof updateSummary === 'function') {
+                    updateSummary();
+                }
+            } catch (e) {
+                console.warn('⚠️ Error al parsear moneda:', e);
+            }
+        }
+    }
+
+    // Ejecutar al cargar
+    loadCurrencyFromStorage();
 
 </script>
 </body>

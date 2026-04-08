@@ -134,15 +134,6 @@
 
         .save-hint { font-size: 0.8rem; color: var(--text-muted); }
 
-        /* Dark mode */
-
-
-
-
-
-
-
-
     </style>
 </head>
 <body>
@@ -297,17 +288,35 @@
 <script src="/js/ui.js"></script>
 <script src="/js/notifications.js"></script>
 <script>
+    // ============================================================
+    // VARIABLES GLOBALES Y CONTROL DE CARGA
+    // ============================================================
     requireAuth('manager');
     renderNavbar('manager');
 
     let currentTaxRate = 0.15;
+    let settingsLoadTimeout = null;
+    let settingsLoaded = false;
 
-    // Cargar configuración actual al entrar
-    loadSettings();
+    // Cargar configuración con delay para evitar 429
+    document.addEventListener('DOMContentLoaded', function() {
+        if (settingsLoadTimeout) clearTimeout(settingsLoadTimeout);
+        settingsLoadTimeout = setTimeout(loadSettings, 300);
+    });
 
+    // ============================================================
+    // CARGAR CONFIGURACIÓN
+    // ============================================================
     async function loadSettings() {
+        if (settingsLoaded) return; // Evitar llamadas duplicadas
+        settingsLoaded = true;
+
         try {
+            console.log("📥 Cargando configuración...");
             const data = await apiGet('/Settings/currency');
+
+            console.log("✅ Configuración cargada:", data);
+
             // Aplicar al formulario
             document.getElementById('currency-symbol').value = data.symbol || 'L.';
             document.getElementById('currency-code').value   = data.code   || 'HNL';
@@ -324,13 +333,19 @@
             updateTaxDisplay(taxPct);
             markActivePreset(data.symbol);
             updateLocaleHint(data.locale);
+
+            clearAlert('alert-container');
         } catch (err) {
-            showAlert('alert-container', 'No se pudo cargar la configuración: ' + err.message, 'danger');
+            console.error("❌ Error cargando configuración:", err);
+            showAlert('alert-container',
+                'No se pudo cargar la configuración: ' + (err.message || 'Intenta más tarde'),
+                'danger');
         }
     }
 
-    // ---- Presets ----
-
+    // ============================================================
+    // PRESETS DE MONEDA
+    // ============================================================
     function applyPreset(symbol, code, locale, name) {
         document.getElementById('currency-symbol').value = symbol;
         document.getElementById('currency-code').value   = code;
@@ -360,8 +375,9 @@
         document.getElementById('currency-locale-hint').textContent = hints[locale] || '';
     }
 
-    // ---- Preview ----
-
+    // ============================================================
+    // PREVIEW DE MONEDA
+    // ============================================================
     function updatePreview() {
         const symbol = document.getElementById('currency-symbol').value || 'L.';
         const locale = document.getElementById('currency-locale').value || 'es-HN';
@@ -373,8 +389,9 @@
         }
     }
 
-    // ---- Tax ----
-
+    // ============================================================
+    // IMPUESTO (ISV/IVA)
+    // ============================================================
     function updateTaxDisplay(pct) {
         const n = parseFloat(pct) || 0;
         currentTaxRate = n / 100;
@@ -399,8 +416,9 @@
         updateTaxDisplay(n);
     }
 
-    // ---- Guardar ----
-
+    // ============================================================
+    // GUARDAR CONFIGURACIÓN
+    // ============================================================
     async function saveSettings() {
         const symbol  = document.getElementById('currency-symbol').value.trim();
         const code    = document.getElementById('currency-code').value.trim();
@@ -419,17 +437,25 @@
         clearAlert('alert-container');
 
         try {
+            console.log("💾 Guardando configuración...");
             await apiPut('/Settings/currency', { symbol, code, locale, taxRate, name });
 
-            // Actualizar el objeto global para que formatCurrency refleje el cambio inmediatamente
-            window._currency = { symbol, code, locale, taxRate, name };
+            // ✅ GUARDAR EN LOCALSTORAGE
+            const currencyData = { symbol, code, locale, taxRate, name };
+            localStorage.setItem('probook_currency', JSON.stringify(currencyData));
+
+            // Actualizar el objeto global
+            window._currency = currencyData;
 
             document.getElementById('save-status').textContent = '✓ Guardado correctamente';
             setTimeout(() => document.getElementById('save-status').textContent = '', 3000);
 
             showAlert('alert-container',
                 `Configuración guardada: ${symbol} (${code || '—'}) · ISV ${taxPct}%`, 'success');
+
+            console.log("✅ Configuración guardada exitosamente");
         } catch (err) {
+            console.error("❌ Error al guardar:", err);
             showAlert('alert-container', err.message || 'Error al guardar.', 'danger');
         } finally {
             setLoading(btn, false);
