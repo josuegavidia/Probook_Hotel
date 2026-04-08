@@ -126,7 +126,7 @@ public class ReservationService : IReservationService
                 CheckOutDate = checkOut,
                 Nights       = nights,
                 TotalCost    = totalCost,
-                Status       = "confirmed",
+                Status       = "pending",
                 Timestamp    = DateTime.UtcNow
             };
 
@@ -261,7 +261,9 @@ public class ReservationService : IReservationService
             {
                 var dict   = doc.ToDictionary();
                 var status = dict.ContainsKey("Status") ? dict["Status"].ToString() : "confirmed";
-                if (status == "cancelled") continue;
+                // Solo contar como ocupada si está confirmada o pendiente
+                // Ignorar: cancelled, rejected
+                if (status == "cancelled" || status == "rejected") continue;
 
                 var existingCheckIn  = ((Timestamp)dict["CheckInDate"]).ToDateTime();
                 var existingCheckOut = ((Timestamp)dict["CheckOutDate"]).ToDateTime();

@@ -39,6 +39,20 @@ namespace Proyecto_Progra_Web.API.DTOs
 
         // Fecha y hora en que se realizo la reserva en formato dd-MM-yyyy HH:mm
         public string Timestamp { get; set; } = string.Empty;
+
+        // ======== NUEVOS CAMPOS PARA VOUCHER ========
+
+        // Estado del voucher: "Pending", "Approved", "Rejected"
+        public string VoucherStatus { get; set; } = "Pending";
+
+        // URL de la imagen del voucher
+        public string VoucherUrl { get; set; } = string.Empty;
+
+        // Cuándo se subió el voucher en formato dd-MM-yyyy HH:mm
+        public string VoucherUploadedAt { get; set; } = string.Empty;
+
+        // Razón del rechazo (si aplica)
+        public string VoucherRejectionReason { get; set; } = string.Empty;
     }
 
     // CreateReservationDto es lo que recibe el backend cuando el huesped quiere reservar

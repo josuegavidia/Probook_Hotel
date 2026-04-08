@@ -32,7 +32,20 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
-
+builder.Services.AddScoped<IVoucherService, VoucherService>();
+builder.Services.AddHttpClient<VoucherService>();
+// Los demas servicios como Scoped: una instancia por peticion HTTP
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IPaymentService, PayPalPaymentService>();
+builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();  // ← AGREGA ESTA LÍNEA
+builder.Services.AddHttpClient<ExchangeRateService>()
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
 builder.Services.AddControllers();
 
 // --------------------------------------------------------

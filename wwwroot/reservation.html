@@ -126,13 +126,375 @@
             color: var(--primary);
         }
 
+        /* MODAL DE VOUCHER */
+        .voucher-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(2px);
+        }
+
+        .voucher-modal.active {
+            display: flex;
+        }
+
+        .voucher-modal-content {
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            position: relative;
+            animation: slideUp 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .voucher-modal-close {
+            color: var(--text-muted);
+            position: absolute;
+            right: 1.5rem;
+            top: 1.5rem;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .voucher-modal-close:hover {
+            color: var(--text);
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .voucher-summary {
+            background: rgba(44, 95, 138, 0.05);
+            border: 1px solid rgba(44, 95, 138, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .voucher-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .voucher-summary-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .voucher-summary-row span:first-child {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .voucher-summary-row strong {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* SECCIÓN DE CUENTAS BANCARIAS */
+        .bank-accounts-section {
+            background: rgba(44, 95, 138, 0.08);
+            border: 1px solid rgba(44, 95, 138, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .bank-accounts-title {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bank-account {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .bank-account:last-child {
+            margin-bottom: 0;
+        }
+
+        .bank-name {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .bank-detail {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0.4rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bank-detail-label {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .bank-detail-value {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0;
+            margin-left: 5px;
+            transition: color 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--secondary);
+        }
+
+        .file-upload-box {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1.5rem 0;
+        }
+
+        .file-upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(44, 95, 138, 0.05);
+        }
+
+        .file-upload-box.dragover {
+            border-color: var(--primary);
+            background: rgba(44, 95, 138, 0.1);
+        }
+
+        .file-upload-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .file-upload-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        #voucherFile {
+            display: none;
+        }
+
+        .file-preview {
+            display: none;
+            margin: 15px 0;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: var(--radius-sm);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .preview-info {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid transparent;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #0c5460;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+            color: #000;
+        }
+
         @media (max-width: 768px) {
             .reservation-layout { grid-template-columns: 1fr; }
             .summary-card { position: static; }
         }
 
+        @media (max-width: 480px) {
+            .voucher-modal-content {
+                width: 95%;
+                padding: 1.5rem;
+            }
+        }
 
+        [data-theme="dark"] .voucher-modal-content {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
 
+        [data-theme="dark"] .voucher-summary {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        [data-theme="dark"] .file-upload-box:hover {
+            background: rgba(74,144,196,0.1);
+        }
+
+        [data-theme="dark"] .file-preview {
+            background: #2a2a2a;
+        }
+
+        [data-theme="dark"] .bank-accounts-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        [data-theme="dark"] .bank-account {
+            background: #2a2a2a;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .bank-name {
+            color: #ffffff;
+        }
+
+        [data-theme="dark"] .bank-detail-label {
+            color: #ffffff;
+        }
+
+        [data-theme="dark"] .bank-detail-value {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .preview-info {
+            color: #bbb;
+        }
+
+        [data-theme="dark"] .btn-cancel {
+            background: #444;
+            color: #fff;
+        }
+
+        [data-theme="dark"] .btn-cancel:hover {
+            background: #555;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -253,17 +615,146 @@
     </main>
 </div>
 
+<!-- MODAL DE VOUCHER -->
+<div id="voucher-modal" class="voucher-modal">
+    <div class="voucher-modal-content">
+        <span class="voucher-modal-close" onclick="closeVoucherModal()">&times;</span>
+
+        <h2 style="margin-bottom: 1.5rem;">📸 Subir Comprobante de Pago</h2>
+
+        <p style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-muted);">
+            Sube una imagen o PDF de tu comprobante de pago para confirmar la reserva.
+            El administrador la revisará y te notificará cuando esté aprobada.
+        </p>
+
+        <div class="voucher-summary">
+            <div class="voucher-summary-row">
+                <span>Habitación:</span>
+                <strong id="modal-room-number"></strong>
+            </div>
+            <div class="voucher-summary-row">
+                <span>Tipo:</span>
+                <strong id="modal-room-type"></strong>
+            </div>
+            <div class="voucher-summary-row">
+                <span>Check-in:</span>
+                <strong id="modal-checkin"></strong>
+            </div>
+            <div class="voucher-summary-row">
+                <span>Check-out:</span>
+                <strong id="modal-checkout"></strong>
+            </div>
+            <div class="voucher-summary-row" style="border-top: 2px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+                <span style="font-weight: 700;">Total a pagar:</span>
+                <strong id="modal-total" style="color: var(--primary); font-size: 1.2rem;"></strong>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE CUENTAS BANCARIAS -->
+        <div class="bank-accounts-section">
+            <div class="bank-accounts-title">
+                💳 Realiza tu depósito en una de estas cuentas:
+            </div>
+
+            <div class="bank-account">
+                <div class="bank-name">Banco Atlántida</div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">Cuenta corriente:</span>
+                    <span class="bank-detail-value">123456789-0</span>
+                    <button class="copy-btn" onclick="copyToClipboard('123456789-0')">Copiar</button>
+                </div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">Titular:</span>
+                    <span>Hotel Gavidia S.A.</span>
+                </div>
+            </div>
+
+            <div class="bank-account">
+                <div class="bank-name">Banco Hondureño</div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">Cuenta corriente:</span>
+                    <span class="bank-detail-value">987654321-5</span>
+                    <button class="copy-btn" onclick="copyToClipboard('987654321-5')">Copiar</button>
+                </div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">Titular:</span>
+                    <span>Hotel Gavidia S.A.</span>
+                </div>
+            </div>
+
+            <div class="bank-account">
+                <div class="bank-name">Transferencia por Sitio Móvil</div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">Número:</span>
+                    <span class="bank-detail-value">+504 9876-5432</span>
+                    <button class="copy-btn" onclick="copyToClipboard('+504 9876-5432')">Copiar</button>
+                </div>
+                <div class="bank-detail">
+                    <span class="bank-detail-label">A nombre de:</span>
+                    <span>Josuè Gavidia</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zona de carga de archivo -->
+        <form id="voucherForm" onsubmit="handleVoucherUpload(event)">
+            <label class="form-label">Selecciona tu comprobante *</label>
+
+            <div class="file-upload-box" id="fileUploadBox">
+                <div class="file-upload-icon">📄</div>
+                <div class="file-upload-text">Haz clic o arrastra aquí</div>
+                <div class="file-upload-hint">JPG, PNG, PDF o GIF (máx 10MB)</div>
+                <input type="file" id="voucherFile" name="voucherFile" accept=".jpg,.jpeg,.png,.pdf,.gif" required>
+            </div>
+
+            <div class="file-preview" id="filePreview">
+                <img id="previewImage" class="preview-image" alt="Vista previa">
+                <div class="preview-info">
+                    <strong>Archivo seleccionado:</strong>
+                    <span id="previewFileName"></span>
+                </div>
+            </div>
+
+            <div id="upload-message" class="alert"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeVoucherModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="btn-upload">
+                    Enviar Comprobante
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script src="/js/theme.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/ui.js"></script>
 <script src="/js/notifications.js"></script>
 <script src="/js/guest-dashboard.js"></script>
+
 <script>
     requireAuth('guest');
     renderNavbar('guest');
 
-    // Actualizar label del impuesto con la tasa real una vez que loadCurrencySettings() resuelva
+    // ============================================================
+    // FUNCIÓN PARA COPIAR AL PORTAPAPELES
+    // ============================================================
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showAlert('alert-container', 'success', '✓ Copiado al portapapeles');
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+        });
+    }
+
+    // ============================================================
+    // INICIALIZACIÓN Y SETUP
+    // ============================================================
+
     document.addEventListener('DOMContentLoaded', () => {
         const lbl = document.getElementById('sum-tax-label');
         if (lbl) lbl.textContent = `Impuesto (${Math.round(getTaxRate() * 100)}%)`;
@@ -271,50 +762,46 @@
 
     const user = getUser();
 
-    // ── Verificación de reserva activa ─────────────────────────────────────
-    // Chequeo rápido por fecha desde localStorage (síncrono, sin red)
+    // Verificar si el usuario ya tiene una reserva activa
     if (user?.hasReserved) {
         const checkOut = parseCheckOut(user.reservedDates || '');
         const hondurasNow = new Date(Date.now() - 6 * 60 * 60 * 1000);
         const locallyExpired = checkOut ? checkOut < hondurasNow : false;
 
         if (locallyExpired) {
-            // Expirada según localStorage — limpiar y permitir reservar
-            user.hasReserved    = false;
+            user.hasReserved = false;
             user.reservedRoomId = null;
-            user.reservedDates  = null;
+            user.reservedDates = null;
             localStorage.setItem('probook_user', JSON.stringify(user));
         } else {
-            // Podría estar activa — verificar con el backend para estar seguros
             (async () => {
                 try {
                     const r = await apiGet('/Reservations/my');
-                    const parts       = r.checkOutDate.split('-');
+                    const parts = r.checkOutDate.split('-');
                     const checkOutUTC = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`);
-                    const now         = new Date(Date.now() - 6 * 60 * 60 * 1000);
-                    const hasExpired  = checkOutUTC < now;
+                    const now = new Date(Date.now() - 6 * 60 * 60 * 1000);
+                    const hasExpired = checkOutUTC < now;
                     const isCancelled = r.status === 'cancelled';
 
                     if (!hasExpired && !isCancelled) {
                         window.location.href = '/already-reserved.html';
                     } else {
-                        user.hasReserved    = false;
+                        user.hasReserved = false;
                         user.reservedRoomId = null;
-                        user.reservedDates  = null;
+                        user.reservedDates = null;
                         localStorage.setItem('probook_user', JSON.stringify(user));
                     }
                 } catch {
-                    user.hasReserved    = false;
+                    user.hasReserved = false;
                     user.reservedRoomId = null;
-                    user.reservedDates  = null;
+                    user.reservedDates = null;
                     localStorage.setItem('probook_user', JSON.stringify(user));
                 }
             })();
         }
     }
 
-    // Extrae la fecha de checkout de "dd-MM-yyyy - dd-MM-yyyy"
-    // Retorna un Date UTC o null si el formato es inválido.
+    // Parsear fecha de checkout
     function parseCheckOut(datesStr) {
         if (!datesStr) return null;
         const parts = datesStr.split(' - ');
@@ -325,17 +812,17 @@
         return isNaN(d.getTime()) ? null : d;
     }
 
-    // Leer parametros de la URL si vienen de rooms-list
+    // Aplicar parámetros de URL si existen
     const params = new URLSearchParams(window.location.search);
-    const roomFromUrl    = params.get('roomNumber');
+    const roomFromUrl = params.get('roomNumber');
     const checkInFromUrl = params.get('checkIn');
     const checkOutFromUrl = params.get('checkOut');
 
-    if (roomFromUrl)    document.getElementById('room-number').value = roomFromUrl;
+    if (roomFromUrl) document.getElementById('room-number').value = roomFromUrl;
     if (checkInFromUrl) document.getElementById('check-in').value = apiDateToInput(checkInFromUrl);
     if (checkOutFromUrl) document.getElementById('check-out').value = apiDateToInput(checkOutFromUrl);
 
-    // Fecha minima hoy
+    // Configurar fechas mínimas
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('check-in').min = today;
     document.getElementById('check-out').min = today;
@@ -345,14 +832,18 @@
 
     if (roomFromUrl || checkInFromUrl) updateSummary();
 
+    // ============================================================
+    // GESTIÓN DEL RESUMEN Y DISPONIBILIDAD
+    // ============================================================
+
     let currentBaseRate = null;
     let availabilityOk = false;
     let checkAvailabilityTimer = null;
 
     async function updateSummary() {
         const roomNumber = document.getElementById('room-number').value.trim();
-        const checkIn    = document.getElementById('check-in').value;
-        const checkOut   = document.getElementById('check-out').value;
+        const checkIn = document.getElementById('check-in').value;
+        const checkOut = document.getElementById('check-out').value;
 
         document.getElementById('sum-room-number').textContent =
             roomNumber ? `Hab. ${roomNumber}` : '---';
@@ -380,8 +871,8 @@
             document.getElementById('sum-nights').textContent = `${nights} noche${nights !== 1 ? 's' : ''}`;
 
             if (currentBaseRate && nights > 0) {
-                const tax   = getTaxRate();
-                const base  = currentBaseRate * nights;
+                const tax = getTaxRate();
+                const base = currentBaseRate * nights;
                 const taxes = base * tax;
                 const total = base + taxes;
                 document.getElementById('sum-base').textContent = formatCurrency(base);
@@ -391,7 +882,6 @@
                 clearCosts();
             }
 
-            // Verificar disponibilidad en tiempo real con debounce
             if (roomNumber && currentBaseRate) {
                 clearTimeout(checkAvailabilityTimer);
                 showAvailability('checking', 'Verificando disponibilidad...');
@@ -409,10 +899,7 @@
 
     async function checkAvailability(roomNumber, checkIn, checkOut) {
         try {
-            // Usamos el endpoint de rooms que ya existe para obtener la habitacion
-            // La disponibilidad real la valida el backend al confirmar,
-            // pero hacemos una consulta previa para informar al usuario
-            const checkInApi  = inputDateToApi(checkIn);
+            const checkInApi = inputDateToApi(checkIn);
             const checkOutApi = inputDateToApi(checkOut);
 
             const result = await apiGet(
@@ -427,7 +914,6 @@
                 showAvailability('no', 'No disponible en esas fechas — elige otras');
             }
         } catch {
-            // Si el endpoint no existe aun, ocultar el indicador y dejar que el backend valide
             availabilityOk = true;
             hideAvailability();
         }
@@ -453,52 +939,271 @@
         document.getElementById('sum-total').textContent = '--';
     }
 
+    // ============================================================
+    // CREAR RESERVA Y MODAL DE VOUCHER
+    // ============================================================
+
+    let currentReservation = null;
+    let isProcessing = false;
+    let selectedFile = null;
+
     async function handleReservation() {
         const roomNumber = document.getElementById('room-number').value.trim();
-        const checkIn    = document.getElementById('check-in').value;
-        const checkOut   = document.getElementById('check-out').value;
-        const btn        = document.getElementById('btn-reserve');
+        const checkIn = document.getElementById('check-in').value;
+        const checkOut = document.getElementById('check-out').value;
+        const btn = document.getElementById('btn-reserve');
 
         clearAlert('alert-container');
 
+        // Validaciones
         if (!roomNumber || !checkIn || !checkOut) {
-            showAlert('alert-container', 'Por favor completa todos los campos.');
+            showAlert('alert-container', 'error', 'Por favor completa todos los campos.');
             return;
         }
 
         if (checkIn >= checkOut) {
-            showAlert('alert-container', 'La fecha de salida debe ser posterior a la entrada.');
+            showAlert('alert-container', 'error', 'La fecha de salida debe ser posterior a la entrada.');
+            return;
+        }
+
+        if (!availabilityOk) {
+            showAlert('alert-container', 'error', 'Por favor verifica que la habitación esté disponible.');
             return;
         }
 
         setLoading(btn, true);
+        isProcessing = true;
 
         try {
-            const response = await apiPost('/Reservations', {
-                roomNumber,
-                checkInDate:  inputDateToApi(checkIn),
-                checkOutDate: inputDateToApi(checkOut)
-            });
+            const checkInApi = inputDateToApi(checkIn);
+            const checkOutApi = inputDateToApi(checkOut);
 
-            const user = getUser();
-            user.hasReserved    = true;
-            user.reservedRoomId = response.reservation.roomId;
-            user.reservedDates  = `${response.reservation.checkInDate} - ${response.reservation.checkOutDate}`;
-            localStorage.setItem('probook_user', JSON.stringify(user));
+            // Verificar disponibilidad una última vez
+            const availResult = await apiGet(
+                `/Rooms/available?roomNumber=${roomNumber}&checkIn=${checkInApi}&checkOut=${checkOutApi}`
+            );
 
-            sessionStorage.setItem('last_reservation', JSON.stringify(response));
-            window.location.href = '/reservation-confirmation.html';
+            if (!availResult.available) {
+                showAlert('alert-container', 'error', 'La habitación no está disponible en esas fechas.');
+                setLoading(btn, false);
+                isProcessing = false;
+                return;
+            }
+
+            // Obtener datos de la habitación
+            const room = await apiGet(`/Rooms/${roomNumber}`);
+            const baseRate = room.baseRate;
+
+            // Calcular el total
+            const [dayIn, monthIn, yearIn] = checkInApi.split('-');
+            const dateCheckIn = new Date(`${yearIn}-${monthIn}-${dayIn}`);
+
+            const [dayOut, monthOut, yearOut] = checkOutApi.split('-');
+            const dateCheckOut = new Date(`${yearOut}-${monthOut}-${dayOut}`);
+
+            const nights = Math.round(
+                (dateCheckOut - dateCheckIn) / (1000 * 60 * 60 * 24)
+            );
+
+            const tax = getTaxRate();
+            const base = baseRate * nights;
+            const taxes = base * tax;
+            const totalAmount = base + taxes;
+
+            const reservationData = {
+                roomNumber: roomNumber,
+                roomType: room.roomType,
+                checkIn: formatDate(checkInApi),
+                checkOut: formatDate(checkOutApi),
+                checkInDate: checkInApi,
+                checkOutDate: checkOutApi,
+                totalAmount: totalAmount,
+                baseRate: baseRate,
+                nights: nights
+            };
+
+            sessionStorage.setItem('pendingReservation', JSON.stringify(reservationData));
+            openVoucherModal(reservationData);
 
         } catch (error) {
-            if (error.message.includes('Ya realizaste')) {
-                window.location.href = '/already-reserved.html';
-            } else {
-                showAlert('alert-container', error.message);
-            }
+            console.error('Error:', error);
+            showAlert('alert-container', 'error', error.message || 'Error validando disponibilidad');
         } finally {
             setLoading(btn, false);
+            isProcessing = false;
         }
     }
+
+    function openVoucherModal(reservation) {
+        currentReservation = reservation;
+        selectedFile = null;
+
+        // Llenar datos del modal
+        document.getElementById('modal-room-number').textContent = reservation.roomNumber;
+        document.getElementById('modal-room-type').textContent = reservation.roomType;
+        document.getElementById('modal-checkin').textContent = reservation.checkIn;
+        document.getElementById('modal-checkout').textContent = reservation.checkOut;
+        document.getElementById('modal-total').textContent = `L ${reservation.totalAmount.toFixed(2)}`;
+
+        // Limpiar formulario
+        document.getElementById('voucherForm').reset();
+        document.getElementById('filePreview').style.display = 'none';
+        document.getElementById('upload-message').className = 'alert';
+        document.getElementById('upload-message').textContent = '';
+
+        // Mostrar modal
+        document.getElementById('voucher-modal').classList.add('active');
+    }
+
+    function closeVoucherModal() {
+        document.getElementById('voucher-modal').classList.remove('active');
+        currentReservation = null;
+        selectedFile = null;
+    }
+
+    // ============================================================
+    // GESTIÓN DE CARGA DE ARCHIVOS
+    // ============================================================
+
+    const fileUploadBox = document.getElementById('fileUploadBox');
+    const fileInput = document.getElementById('voucherFile');
+
+    fileUploadBox.addEventListener('click', () => fileInput.click());
+
+    fileUploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadBox.classList.add('dragover');
+    });
+
+    fileUploadBox.addEventListener('dragleave', () => {
+        fileUploadBox.classList.remove('dragover');
+    });
+
+    fileUploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadBox.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelect(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        selectedFile = file;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const isImage = file.type.startsWith('image/');
+            const previewImage = document.getElementById('previewImage');
+
+            if (isImage) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            } else {
+                previewImage.style.display = 'none';
+            }
+
+            document.getElementById('previewFileName').textContent = file.name;
+            document.getElementById('filePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ============================================================
+    // ENVIAR VOUCHER Y CREAR RESERVA
+    // ============================================================
+
+    async function handleVoucherUpload(event) {
+        event.preventDefault();
+
+        if (!selectedFile) {
+            showUploadMessage('Por favor selecciona un archivo', 'error');
+            return;
+        }
+
+        if (!currentReservation) {
+            showUploadMessage('Error: No hay datos de reserva', 'error');
+            return;
+        }
+
+        const uploadBtn = document.getElementById('btn-upload');
+        setLoading(uploadBtn, true);
+
+        try {
+            // Crear la reserva primero
+            const reservationResponse = await apiPost('/Reservations', {
+                roomNumber: currentReservation.roomNumber,
+                checkInDate: currentReservation.checkInDate,
+                checkOutDate: currentReservation.checkOutDate
+            });
+
+            const reservationId = reservationResponse.reservation.id;
+            console.log('✅ Reserva creada:', reservationId);
+
+            // Ahora subir el voucher
+            showUploadMessage('⟳ Subiendo comprobante...', 'info');
+
+            const formData = new FormData();
+            formData.append('voucherFile', selectedFile);
+            formData.append('reservationId', reservationId);
+
+            const response = await fetch('/api/vouchers/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Actualizar usuario en localStorage
+                const currentUser = getUser();
+                currentUser.hasReserved = true;
+                currentUser.reservationStatus = 'pending';  
+                currentUser.reservedRoomId = reservationResponse.reservation.roomId;
+                currentUser.reservedDates = `${currentReservation.checkInDate} - ${currentReservation.checkOutDate}`;
+                localStorage.setItem('probook_user', JSON.stringify(currentUser));
+
+                sessionStorage.removeItem('pendingReservation');
+
+                showUploadMessage('✅ ¡Reserva confirmada! Redirigiendo...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '/guest-dashboard.html';
+                }, 2000);
+            } else {
+                showUploadMessage('❌ ' + (data.message || 'Error al subir el comprobante'), 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showUploadMessage('❌ Error de conexión', 'error');
+        } finally {
+            setLoading(uploadBtn, false);
+        }
+    }
+
+    function showUploadMessage(message, type) {
+        const msgDiv = document.getElementById('upload-message');
+        msgDiv.textContent = message;
+        msgDiv.className = 'alert alert-' + type + ' show';
+    }
+
+    // Cerrar modal al hacer click fuera
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('voucher-modal');
+        if (event.target === modal) {
+            closeVoucherModal();
+        }
+    });
+
 </script>
 </body>
 </html>

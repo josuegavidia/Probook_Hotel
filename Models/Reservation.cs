@@ -54,6 +54,32 @@ namespace Proyecto_Progra_Web.API.Models
         [FirestoreProperty]
         public DateTime Timestamp { get; set; }
 
+        // ======== NUEVOS CAMPOS PARA VOUCHER ========
+        
+        // Estado del voucher: Pending=0, Approved=1, Rejected=2
+        [FirestoreProperty]
+        public int VoucherStatus { get; set; } = 0; // Pending por defecto
+
+        // URL del voucher subido a Cloudinary (vacío hasta que se suba la imagen)
+        [FirestoreProperty]
+        public string VoucherUrl { get; set; } = string.Empty;
+
+        // Fecha en que se subió el voucher (para auditoria)
+        [FirestoreProperty]
+        public DateTime? VoucherUploadedAt { get; set; }
+
+        // Fecha en que el admin aprobó o rechazó (para auditoria)
+        [FirestoreProperty]
+        public DateTime? VoucherReviewedAt { get; set; }
+
+        // Comentario del admin al rechazar (ej: "Imagen ilegible", "Monto no coincide")
+        [FirestoreProperty]
+        public string VoucherRejectionReason { get; set; } = string.Empty;
+
+        // Email del cliente al momento de la reserva (para enviar correos sin consultar Users)
+        [FirestoreProperty]
+        public string UserEmail { get; set; } = string.Empty;
+
         // Constructor vacio requerido por Firestore para deserializar documentos
         public Reservation() { }
     }

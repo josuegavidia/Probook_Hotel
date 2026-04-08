@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Voucher | ProBook Hotel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #11998e;
+            --danger: #f5576c;
+            --dark: #1e1e1e;
+            --light: #f9f9f9;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .navbar-brand span {
+            color: var(--secondary);
+        }
+
+        .navbar-user {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            margin-top: 80px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 15px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #11998e;
+            display: block;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #f5576c;
+            display: block;
+        }
+
+        .reservation-info {
+            background: #f0f4ff;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .file-upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .file-upload-box:hover {
+            border-color: var(--primary);
+            background: #f9f9ff;
+        }
+
+        .file-upload-box.dragover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: var(--dark);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .file-upload-hint {
+            font-size: 13px;
+            color: #999;
+        }
+
+        #voucherFile {
+            display: none;
+        }
+
+        .file-preview {
+            display: none;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .preview-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .footer-link a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                margin-top: 70px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .file-upload-box {
+                padding: 30px 15px;
+            }
+
+            .file-upload-icon {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/guest-dashboard.html" class="navbar-brand">Pro<span>Book</span></a>
+    <div id="nav-user" class="navbar-user">Cargando...</div>
+</nav>
+
+<div class="container">
+    <div class="header">
+        <h1>📸 Subir Voucher</h1>
+        <p>Confirma tu reserva compartiendo tu comprobante de pago</p>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="reservation-info" id="reservation-info">
+        <div class="info-row">
+            <span class="info-label">Habitación:</span>
+            <span id="info-room">--</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Check-in:</span>
+            <span id="info-checkin">--</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Check-out:</span>
+            <span id="info-checkout">--</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Total:</span>
+            <span id="info-total">--</span>
+        </div>
+    </div>
+
+    <form id="voucherForm">
+        <div class="file-upload-box" id="fileUploadBox">
+            <div class="file-upload-icon">📄</div>
+            <div class="file-upload-text">Haz clic o arrastra aquí</div>
+            <div class="file-upload-hint">JPG, PNG, PDF o GIF (máx 10MB)</div>
+            <input type="file" id="voucherFile" name="voucherFile" accept=".jpg,.jpeg,.png,.pdf,.gif" required>
+        </div>
+
+        <div class="file-preview" id="filePreview">
+            <img id="previewImage" class="preview-image" alt="Vista previa">
+            <div class="preview-info">
+                <strong>Archivo seleccionado:</strong>
+                <span id="previewFileName"></span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+            Confirmar y Enviar
+        </button>
+
+        <div class="loading-text" id="loadingText">
+            <span class="spinner"></span> Subiendo archivo...
+        </div>
+    </form>
+
+    <div class="footer-link">
+        <a href="/guest-dashboard.html">← Volver a mi panel</a>
+    </div>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/notifications.js"></script>
+<script>
+    // Requerir autenticación
+    requireAuth('guest');
+    renderNavbar('guest');
+
+    let selectedFile = null;
+    let reservationId = null;
+
+    function loadReservationData() {
+        const params = new URLSearchParams(window.location.search);
+        reservationId = params.get('reservationId');
+
+        if (!reservationId) {
+            apiGet('/Reservations/my')
+                .then(res => {
+                    if (res && res.id) {
+                        reservationId = res.id;
+                        populateReservationInfo(res);
+                    }
+                })
+                .catch(() => {
+                    showAlert('error', 'No se encontró una reserva activa.');
+                    document.getElementById('submitBtn').disabled = true;
+                });
+        }
+    }
+
+    function populateReservationInfo(reservation) {
+        if (!reservation) return;
+
+        document.getElementById('info-room').textContent = reservation.roomNumber || '--';
+        document.getElementById('info-checkin').textContent = reservation.checkInDate || '--';
+        document.getElementById('info-checkout').textContent = reservation.checkOutDate || '--';
+        document.getElementById('info-total').textContent = `L. ${(reservation.totalCost || 0).toFixed(2)}`;
+        document.getElementById('reservation-info').style.display = 'block';
+    }
+
+    const fileUploadBox = document.getElementById('fileUploadBox');
+    const fileInput = document.getElementById('voucherFile');
+
+    fileUploadBox.addEventListener('click', () => fileInput.click());
+
+    fileUploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadBox.classList.add('dragover');
+    });
+
+    fileUploadBox.addEventListener('dragleave', () => {
+        fileUploadBox.classList.remove('dragover');
+    });
+
+    fileUploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadBox.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelect(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        selectedFile = file;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const isImage = file.type.startsWith('image/');
+            const previewImage = document.getElementById('previewImage');
+
+            if (isImage) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            } else {
+                previewImage.style.display = 'none';
+            }
+
+            document.getElementById('previewFileName').textContent = file.name;
+            document.getElementById('filePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    document.getElementById('voucherForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!selectedFile) {
+            showAlert('error', 'Selecciona un archivo primero');
+            return;
+        }
+
+        if (!reservationId) {
+            showAlert('error', 'No se encontró la reserva');
+            return;
+        }
+
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('loadingText').style.display = 'block';
+
+        try {
+            const formData = new FormData();
+            formData.append('voucherFile', selectedFile);
+            formData.append('reservationId', reservationId);
+
+            const response = await fetch('/api/vouchers/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('probook_token')}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showAlert('success', '✅ Voucher subido exitosamente.');
+                setTimeout(() => {
+                    window.location.href = '/guest-dashboard.html';
+                }, 2000);
+            } else {
+                showAlert('error', data.message || 'Error al subir el voucher');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('error', 'Error al conectar con el servidor');
+        } finally {
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('loadingText').style.display = 'none';
+        }
+    });
+
+    function showAlert(type, message) {
+        const container = document.getElementById('alert-container');
+        container.innerHTML = `<div class="alert ${type}">${message}</div>`;
+    }
+
+    loadReservationData();
+</script>
+
+</body>
+</html>
