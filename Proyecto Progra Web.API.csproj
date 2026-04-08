@@ -9,21 +9,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="brevo_csharp" Version="1.1.2" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.28.0" />
     <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.24" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="PayPalCheckoutSdk" Version="1.0.4" />
+    <PackageReference Include="sib_api_v3_sdk" Version="4.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="wwwroot\**" />
+    <Content Include="wwwroot\manager-approvals.html" />
+    <Content Include="wwwroot\voucher-upload.html" />
   </ItemGroup>
 
   <ItemGroup>

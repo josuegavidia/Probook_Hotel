@@ -94,6 +94,105 @@ function handleUnauthorized() {
     window.location.href = '/login.html';
 }
 
+// ============================================================
+// CARGAR MONEDA AL LOGIN
+// ============================================================
+async function loadCurrencyOnLogin() {
+    try {
+        console.log('📥 Cargando moneda al login...');
+        const data = await apiGet('/Settings/currency');
+
+        if (data && data.symbol) {
+            const currencyData = {
+                symbol: data.symbol,
+                code: data.code || 'HNL',
+                locale: data.locale || 'es-HN',
+                taxRate: data.taxRate || 0.15,
+                name: data.name || 'Lempira hondureño'
+            };
+
+            localStorage.setItem('probook_currency', JSON.stringify(currencyData));
+            console.log('✅ Moneda cargada al login:', currencyData);
+        }
+    } catch (e) {
+        console.warn('⚠️ No se pudo cargar moneda al login, usando Lempira por defecto:', e);
+
+        // Usar Lempira por defecto
+        localStorage.setItem('probook_currency', JSON.stringify({
+            symbol: 'L.',
+            code: 'HNL',
+            locale: 'es-HN',
+            taxRate: 0.15,
+            name: 'Lempira hondureño'
+        }));
+    }
+}
+
+// ============================================================
+// CARGAR MONEDA AL ABRIR CUALQUIER PÁGINA
+// ============================================================
+async function loadCurrencyOnPageLoad() {
+    try {
+        // Intentar cargar desde el servidor
+        const data = await apiGet('/Settings/currency');
+
+        if (data && data.symbol) {
+            const currencyData = {
+                symbol: data.symbol,
+                code: data.code || 'HNL',
+                locale: data.locale || 'es-HN',
+                taxRate: data.taxRate || 0.15,
+                name: data.name || 'Lempira hondureño'
+            };
+
+            localStorage.setItem('probook_currency', JSON.stringify(currencyData));
+            console.log('✅ Moneda actualizada en página:', currencyData);
+
+            // Refrescar datos si hay funciones disponibles
+            if (typeof loadRooms === 'function') {
+                console.log('🔄 Recargando habitaciones...');
+                loadRooms();
+            }
+            if (typeof loadDashboard === 'function') {
+                console.log('🔄 Recargando dashboard...');
+                loadDashboard();
+            }
+            if (typeof loadReports === 'function') {
+                console.log('🔄 Recargando reportes...');
+                loadReports();
+            }
+            if (typeof loadGuests === 'function') {
+                console.log('🔄 Recargando huéspedes...');
+                loadGuests();
+            }
+            if (typeof updateSummary === 'function') {
+                console.log('🔄 Actualizando resumen...');
+                updateSummary();
+            }
+            if (typeof renderRooms === 'function') {
+                console.log('🔄 Renderizando habitaciones...');
+                renderRooms(allRooms || []);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Error cargando moneda en página:', e);
+
+        // Cargar desde localStorage si existe
+        const stored = localStorage.getItem('probook_currency');
+        if (!stored) {
+            // Usar Lempira por defecto si no hay nada guardado
+            console.log('💾 Estableciendo Lempira como moneda por defecto');
+            localStorage.setItem('probook_currency', JSON.stringify({
+                symbol: 'L.',
+                code: 'HNL',
+                locale: 'es-HN',
+                taxRate: 0.15,
+                name: 'Lempira hondureño'
+            }));
+        }
+    }
+}
+
 // ---- Verificación periódica de sesión ----
 
 const _publicPages = ['/index.html', '/login.html', '/register.html', '/forgot-password.html', '/'];

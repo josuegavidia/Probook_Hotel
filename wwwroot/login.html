@@ -12,7 +12,6 @@
         const savedTheme = localStorage.getItem('probook_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <style>
         body {
             min-height: 100vh;
@@ -90,10 +89,18 @@
             height: 200px;
             cursor: default;
             background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            font-size: 120px;
+            user-select: none;
         }
 
-        #monkey-container svg > g:first-child { display: none !important; }
-        #monkey-container svg { background: transparent !important; }
+        #monkey-emoji {
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
 
         .auth-panel-title {
             font-family: var(--font-display);
@@ -205,22 +212,14 @@
                 width: 90px !important;
                 height: 90px !important;
                 flex-shrink: 0;
+                margin: 0;
+                font-size: 60px;
             }
             .auth-panel-title { font-size: 1rem; }
             .auth-panel-desc { display: none; }
             .auth-panel-link { font-size: 0.8rem; }
             .auth-form-section { padding: 1.5rem; }
         }
-
-        /* Modo oscuro auth */
-
-
-
-
-
-
-
-
     </style>
 </head>
 <body>
@@ -252,7 +251,7 @@
             <label class="form-label" for="email">Correo electronico</label>
             <input type="email" id="email" class="form-control"
                    placeholder="tu@correo.com" autocomplete="email"
-                   onfocus="monkeyLook()">
+                   onfocus="monkeyNormal()">
         </div>
 
         <div class="form-group">
@@ -260,7 +259,7 @@
             <div class="password-wrapper">
                 <input type="password" id="password" class="form-control"
                        placeholder="••••••••" autocomplete="current-password"
-                       onfocus="monkeyCoverIfHidden()">
+                       onfocus="monkeyCover()">
                 <button type="button" class="btn-toggle-password" id="btn-toggle"
                         onclick="togglePassword()" title="Ver contrasena">👁</button>
             </div>
@@ -278,14 +277,109 @@
     </div>
 </div>
 
-<script src="/js/theme.js"></script>
+<!-- ============================================================
+     SCRIPTS EN ORDEN CORRECTO
+     ============================================================ -->
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
+<script src="/js/theme.js"></script>
 <script src="/js/ui.js"></script>
-<script>initTheme(); document.addEventListener("DOMContentLoaded", updateThemeBtn);</script>
+
 <script>
-    // Verificar si hay sesion activa y si el token sigue siendo valido
-    async function checkSession() {
+    // ============================================================
+    // MONO EMOJI - Simple y funcional
+    // ============================================================
+    let monkeyEmoji = null;
+
+    const MONKEY_STATES = {
+        NORMAL: "🐵",
+        COVER: "🙈"
+    };
+
+    function initMonkey() {
+        const container = document.getElementById("monkey-container");
+
+        if (!container) {
+            console.error("❌ monkey-container no encontrado");
+            return;
+        }
+
+        // Crear elemento del mono con emoji
+        monkeyEmoji = document.createElement("div");
+        monkeyEmoji.id = "monkey-emoji";
+        monkeyEmoji.textContent = MONKEY_STATES.NORMAL;
+
+        container.appendChild(monkeyEmoji);
+        console.log("✅ Mono cargado correctamente (emoji)");
+    }
+
+    // Funciones globales para el HTML (onfocus handlers)
+    window.monkeyNormal = function() {
+        if (monkeyEmoji) {
+            monkeyEmoji.textContent = MONKEY_STATES.NORMAL;
+            console.log("🐵 Mono normal");
+        }
+    };
+
+    window.monkeyCover = function() {
+        if (monkeyEmoji) {
+            monkeyEmoji.textContent = MONKEY_STATES.COVER;
+            console.log("🙈 Mono tapándose");
+        }
+    };
+
+    window.togglePassword = function() {
+        const input = document.getElementById("password");
+        if (!input) return;
+
+        input.type = input.type === "text" ? "password" : "text";
+
+        if (monkeyEmoji) {
+            const state = input.type === "password" ? MONKEY_STATES.COVER : MONKEY_STATES.NORMAL;
+            monkeyEmoji.textContent = state;
+            console.log("Toggle password:", state);
+        }
+    };
+
+    // Volver al normal al hacer clic fuera
+    document.addEventListener("click", function(e) {
+        const targetIds = ["email", "password", "btn-toggle"];
+        if (!targetIds.includes(e.target.id) && monkeyEmoji) {
+            monkeyEmoji.textContent = MONKEY_STATES.NORMAL;
+        }
+    });
+
+    // Restaurar estado al volver a la pestaña
+    document.addEventListener("visibilitychange", function() {
+        if (!document.hidden && monkeyEmoji) {
+            const pwdInput = document.getElementById("password");
+            if (pwdInput) {
+                const state = pwdInput.type === "text"
+                    ? MONKEY_STATES.NORMAL
+                    : MONKEY_STATES.COVER;
+                monkeyEmoji.textContent = state;
+            }
+        }
+    });
+
+    // ============================================================
+    // INICIALIZACIÓN DEL TEMA Y MONO
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", function() {
+        // Inicializar tema
+        if (typeof initTheme === 'function') {
+            initTheme();
+        }
+        if (typeof updateThemeBtn === 'function') {
+            updateThemeBtn();
+        }
+
+        // Inicializar mono
+        initMonkey();
+    });
+
+    // Verificar sesión cuando el DOM está listo
+    document.addEventListener("DOMContentLoaded", async function() {
         if (!isLoggedIn()) return;
         try {
             const response = await fetch(`${API_URL}/Test/health`, {
@@ -300,80 +394,24 @@
                 localStorage.removeItem('probook_user');
             }
         } catch (error) {
-            // Servidor no disponible, limpiar sesion
             localStorage.removeItem('probook_token');
             localStorage.removeItem('probook_user');
         }
-    }
-    checkSession();
+    });
 
+    // Enter para login
     document.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") handleLogin();
-    });
-
-    // ---- LOTTIE MONKEY ----
-    const anim = lottie.loadAnimation({
-        container: document.getElementById("monkey-container"),
-        renderer: "svg",
-        loop: false,
-        autoplay: false,
-        path: "/js/monkey.json"
-    });
-
-    const COVER_FRAME = 45;
-    const IDLE_FRAME  = 0;
-    const LOOK_FRAME  = 15;
-
-    anim.addEventListener("DOMLoaded", function() {
-        anim.goToAndStop(IDLE_FRAME, true);
-    });
-
-    anim.addEventListener("complete", function() {
-        anim.goToAndStop(anim.currentFrame, true);
-    });
-
-    function monkeyLook() {
-        anim.goToAndStop(LOOK_FRAME, true);
-    }
-
-    function monkeyCoverIfHidden() {
-        const input = document.getElementById("password");
-        if (input.type === "password") {
-            anim.goToAndStop(COVER_FRAME, true);
-        }
-    }
-
-    function togglePassword() {
-        const input = document.getElementById("password");
-        input.type = input.type === "text" ? "password" : "text";
-        if (input.type === "password") {
-            anim.goToAndStop(COVER_FRAME, true);
-        } else {
-            anim.goToAndStop(IDLE_FRAME, true);
-        }
-    }
-
-    // Volver al idle al hacer clic fuera
-    document.addEventListener("click", function(e) {
-        const ids = ["email", "password", "btn-toggle"];
-        if (!ids.includes(e.target.id)) {
-            anim.goToAndStop(IDLE_FRAME, true);
+        if (e.key === "Enter") {
+            handleLogin();
         }
     });
 
-    // Restaurar estado al volver a la pestana
-    document.addEventListener("visibilitychange", function() {
-        if (!document.hidden) {
-            const pwdInput = document.getElementById("password");
-            if (pwdInput.type === "text") {
-                anim.goToAndStop(IDLE_FRAME, true);
-            } else {
-                anim.goToAndStop(COVER_FRAME, true);
-            }
-        }
-    });
-
-    // ---- LOGIN ----
+    // ============================================================
+    // MANEJADOR DE LOGIN
+    // ============================================================
+    // ============================================================
+    // MANEJADOR DE LOGIN
+    // ============================================================
     async function handleLogin() {
         const email    = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
@@ -392,8 +430,10 @@
             const data = await apiPost("/Auth/login", { email, password }, false);
             saveSession(data.token, data.user);
 
-            // Si el backend indica que tiene contrasena temporal,
-            // redirigir obligatoriamente a change-password antes de entrar al sistema
+            // ✅ CARGAR MONEDA AL LOGIN
+            console.log("🔐 Login exitoso, cargando moneda...");
+            await loadCurrencyOnLogin();
+
             if (data.user.requiresPasswordChange) {
                 window.location.href = "/change-password.html";
             } else {
@@ -402,11 +442,12 @@
                     : "/guest-dashboard.html";
             }
         } catch (error) {
-            showAlert("alert-container", error.message || "Error al iniciar sesion.");
+            showAlert("alert-container", error.message || "Error al iniciar sesión.");
         } finally {
             setLoading(btn, false);
         }
     }
 </script>
+
 </body>
 </html>

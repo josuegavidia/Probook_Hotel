@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using BCrypt.Net;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Proyecto_Progra_Web.API.Services;
 
@@ -538,5 +539,68 @@ public class AuthService : IAuthService
             user.ReservationTimestamp = ((Timestamp)dict["ReservationTimestamp"]).ToDateTime();
 
         return user;
+    }
+    
+        // --------------------------------------------------------
+    // LOGOUT
+    // --------------------------------------------------------
+
+    public async Task<bool> LogoutAsync(string token, ITokenBlacklistService tokenBlacklistService)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _logger.LogWarning("⚠️ Token vacío en logout");
+                return false;
+            }
+
+            if (tokenBlacklistService == null)
+            {
+                _logger.LogError("❌ TokenBlacklistService no inicializado");
+                return false;
+            }
+
+            // Decodificar el token para obtener la expiración
+            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken;
+
+            try
+            {
+                jwtToken = handler.ReadToken(token) as JwtSecurityToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"⚠️ Token inválido en logout: {ex.Message}");
+                return false;
+            }
+
+            if (jwtToken == null)
+            {
+                _logger.LogWarning("⚠️ No se pudo decodificar el token");
+                return false;
+            }
+
+            // Verificar que el token aún no ha expirado
+            if (jwtToken.ValidTo <= DateTime.UtcNow)
+            {
+                _logger.LogWarning("⚠️ Token ya ha expirado");
+                return false;
+            }
+
+            // Calcular cuánto tiempo falta para que expire
+            TimeSpan timeToExpire = jwtToken.ValidTo - DateTime.UtcNow;
+
+            // Agregar a blacklist con ese tiempo de expiración
+            await tokenBlacklistService.AddToBlacklistAsync(token, timeToExpire);
+
+            _logger.LogInformation("✅ Usuario desconectado exitosamente. Token invalidado.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"❌ Error durante logout: {ex.Message}");
+            return false;
+        }
     }
 }

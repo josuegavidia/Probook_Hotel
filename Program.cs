@@ -1,66 +1,76 @@
 using Proyecto_Progra_Web.API.Services;
+using Proyecto_Progra_Web.API.Middleware;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Caching.Memory;
 
 // Deshabilitar el mapeo automatico de claims a nivel global
-// Necesario para que el claim "role" no sea convertido al tipo URI largo de Microsoft
-// y [Authorize(Roles = "manager")] funcione correctamente
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --------------------------------------------------------
-// Registro de servicios
-// --------------------------------------------------------
-
-// ServerInstanceService como Singleton: genera un GUID unico al arrancar el servidor.
-// Se incluye en cada token JWT como claim "sid".
-// Si el servidor se reinicia, el GUID cambia y todos los tokens anteriores
-// quedan invalidos automaticamente — el frontend los detecta y cierra sesion.
+// ============================================================
+// REGISTRO DE SERVICIOS
+// ============================================================
 builder.Services.AddSingleton<ServerInstanceService>();
-
-// FirebaseService como Singleton: una sola instancia para toda la app
-// porque la conexion a Firestore es costosa de inicializar
 builder.Services.AddSingleton<FirebaseService>();
 
-// Los demas servicios como Scoped: una instancia por peticion HTTP
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IVoucherService, VoucherService>();
+builder.Services.AddScoped<IPaymentService, PayPalPaymentService>();
+builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+
+// ============================================================
+// AUDIT LOG SERVICE
+// ============================================================
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+builder.Services.AddHttpClient<VoucherService>();
+builder.Services.AddHttpClient<ExchangeRateService>()
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(10));
 
 builder.Services.AddControllers();
 
-// --------------------------------------------------------
-// Configuracion de JWT
-// --------------------------------------------------------
-var jwtSettings = builder.Configuration.GetSection("Jwt");
+// ============================================================
+// FLUENT VALIDATION
+// ============================================================
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddHttpContextAccessor();
 
-// Obtener la clave secreta de User Secrets o Variables de Entorno
-// Orden de prioridad:
-// 1. Variable de entorno JWT__SECRETKEY (producción)
-// 2. User Secrets (desarrollo)
-// 3. appsettings.json (vacío - fallback que falla intencionalmente)
+// ============================================================
+// MEMORY CACHE PARA RATE LIMITING Y TOKEN BLACKLIST
+// ============================================================
+builder.Services.AddMemoryCache();
+
+// ============================================================
+// CONFIGURACION DE JWT
+// ============================================================
+var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = builder.Configuration["Jwt:SecretKey"];
 
-// Validar que la clave secreta exista y no esté vacía
 if (string.IsNullOrWhiteSpace(secretKey))
 {
     throw new InvalidOperationException(
         "JWT SecretKey no configurada. " +
-        "Para desarrollo, usa: dotnet user-secrets set \"Jwt:SecretKey\" \"tu_clave_aqui\". " +
-        "Para producción, configura la variable de entorno JWT__SECRETKEY.");
+        "Para desarrollo, usa: dotnet user-secrets set \"Jwt:SecretKey\" \"tu_clave_aqui\"");
 }
 
-// Validar longitud mínima de la clave (256 bits = 32 caracteres)
 if (secretKey.Length < 32)
 {
     throw new InvalidOperationException(
-        $"JWT SecretKey debe tener al menos 32 caracteres. Longitud actual: {secretKey.Length}");
+        $"JWT SecretKey debe tener al menos 32 caracteres. Actual: {secretKey.Length}");
 }
 
 var keyBytes = Encoding.UTF8.GetBytes(secretKey);
@@ -72,10 +82,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    // Deshabilitar el mapeo de claims dentro del middleware JwtBearer
-    // Esto evita que "role" se convierta al tipo URI largo de Microsoft
     options.MapInboundClaims = false;
-
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -90,9 +97,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// --------------------------------------------------------
-// Swagger con boton Authorize para enviar el token JWT
-// --------------------------------------------------------
+// ============================================================
+// SWAGGER
+// ============================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -103,7 +110,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Sistema de Gestion Integrada de Reservas Hoteleras"
     });
 
-    // Definicion del esquema de seguridad Bearer
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Ingrese el token JWT: Bearer {token}",
@@ -114,7 +120,6 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT"
     });
 
-    // Hacer que todos los endpoints bloqueados muestren el candado en Swagger
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -131,51 +136,34 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// --------------------------------------------------------
-// CORS: permitir peticiones desde el frontend Angular
-// --------------------------------------------------------
+// ============================================================
+// CORS - CONFIGURACIÓN STRICT
+// ============================================================
+var allowedOrigins = new[] 
+{
+    "http://localhost:44354",
+    "http://localhost:3000",
+    "https://tudominio.com",
+    "https://www.tudominio.com"
+};
+
 builder.Services.AddCors(options =>
 {
-    if (builder.Environment.IsDevelopment())
+    options.AddPolicy("StrictCorsPolicy", policy =>
     {
-        // Desarrollo: permitir todo para facilitar el desarrollo local
-        options.AddPolicy("CorsPolicy", policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
-    }
-    else
-    {
-        // Producción: restringir a orígenes específicos
-        // Configura los orígenes permitidos mediante:
-        // 1. Variable de entorno: AllowedOrigins__0, AllowedOrigins__1, etc.
-        // 2. appsettings.Production.json: "AllowedOrigins": ["https://tuapp.com"]
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins")
-            .Get<string[]>() ?? Array.Empty<string>();
-
-        if (allowedOrigins.Length == 0)
-        {
-            throw new InvalidOperationException(
-                "No se han configurado orígenes permitidos para CORS en producción. " +
-                "Configura 'AllowedOrigins' en appsettings.Production.json o mediante variables de entorno " +
-                "(AllowedOrigins__0, AllowedOrigins__1, etc.)");
-        }
-
-        options.AddPolicy("CorsPolicy", policy =>
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials(); // Permite cookies/credenciales si es necesario
-        });
-    }
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition")
+            .SetPreflightMaxAge(TimeSpan.FromHours(1));
+    });
 });
 
-// --------------------------------------------------------
-// Build y pipeline de la aplicacion
-// --------------------------------------------------------
+// ============================================================
+// BUILD Y PIPELINE
+// ============================================================
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -184,21 +172,143 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors("CorsPolicy");
+// ============================================================
+// MIDDLEWARE PIPELINE - ORDEN IMPORTANTE
+// ============================================================
 
-// Servir archivos estaticos desde la carpeta wwwroot
-// Permite acceder a los HTML desde https://localhost:puerto/login.html
+// 0. SECURITY HEADERS - Aplicar PRIMERO a TODO
+// ============================================================
+app.Use(async (context, next) =>
+{
+    // ✅ CONTENT SECURITY POLICY - Permite Cloudinary, Google Fonts, etc.
+    context.Response.Headers.Add("Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; " +
+        "img-src 'self' data: https: blob:; " +
+        "font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; " +
+        "connect-src 'self' https://api.github.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://api.cloudinary.com https://res.cloudinary.com; " +
+        "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        "form-action 'self';");
+    
+    // ✅ OTROS SECURITY HEADERS
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Add("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+    context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    
+    await next();
+});
+
+// 1. Token Blacklist (verifica tokens revocados)
+app.UseMiddleware<TokenBlacklistMiddleware>();
+
+// 2. Audit Logging (registra acciones)
+app.UseMiddleware<AuditLoggingMiddleware>();
+
+
+
+// 4. HTTPS Redirect
+app.UseHttpsRedirection();
+
+// 5. CORS
+app.UseCors("StrictCorsPolicy");
+
+// ============================================================
+// RATE LIMITING MIDDLEWARE
+// ============================================================
+app.Use(async (context, next) =>
+{
+    var endpoint = context.Request.Path.Value?.ToLower() ?? "";
+    var method = context.Request.Method;
+    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    
+    // Endpoints CRÍTICOS - Límite: 5 por minuto
+    var criticalEndpoints = new[]
+    {
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/vouchers/upload"
+    };
+    
+    // Endpoints NORMALES - Límite: 100 por minuto
+    var normalEndpoints = new[]
+    {
+        "/api/reservations",
+        "/api/rooms",
+        "/api/guests"
+    };
+    
+    // Endpoints SIN LÍMITE (lectura de configuración)
+    var unrestrictedEndpoints = new[]
+    {
+        "/api/settings/currency"
+    };
+    
+    // Solo aplicar rate limiting a rutas /api
+    if (endpoint.StartsWith("/api"))
+    {
+        // Si es un endpoint sin restricción, permitir
+        if (unrestrictedEndpoints.Any(e => endpoint.Contains(e)))
+        {
+            await next();
+            return;
+        }
+
+        bool isCritical = criticalEndpoints.Any(e => endpoint.Contains(e));
+        bool isNormal = normalEndpoints.Any(e => endpoint.Contains(e));
+        
+        var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
+        
+        int limit;
+        if (isCritical)
+            limit = 5;  // 5 por minuto (login, registro)
+        else if (isNormal)
+            limit = 100; // 100 por minuto (operaciones normales)
+        else
+            limit = 200; // 200 por minuto (todo lo demás)
+        
+        var cacheKey = $"RateLimit_{method}_{endpoint}_{ip}";
+        
+        if (cache.TryGetValue(cacheKey, out int count))
+        {
+            if (count >= limit)
+            {
+                context.Response.StatusCode = 429;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new 
+                { 
+                    message = "Demasiadas solicitudes. Intenta más tarde.",
+                    retryAfter = 60
+                });
+                return;
+            }
+            cache.Set(cacheKey, count + 1, TimeSpan.FromMinutes(1));
+        }
+        else
+        {
+            cache.Set(cacheKey, 1, TimeSpan.FromMinutes(1));
+        }
+    }
+    
+    await next();
+});
+
+// ============================================================
+// ARCHIVOS ESTÁTICOS Y 404
+// ============================================================
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        // Cache de 5 minutos para archivos estáticos
         ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=300");
     }
 });
 
-// Página 404 personalizada para rutas no encontradas
+// Página 404
 app.Use(async (context, next) =>
 {
     await next();
@@ -207,18 +317,22 @@ app.Use(async (context, next) =>
         && !context.Response.HasStarted)
     {
         context.Response.ContentType = "text/html";
-        context.Response.StatusCode  = 404;
+        context.Response.StatusCode = 404;
         var file404 = Path.Combine(app.Environment.WebRootPath, "404.html");
         if (File.Exists(file404))
             await context.Response.SendFileAsync(file404);
     }
 });
 
-// UseAuthentication debe ir antes de UseAuthorization
+// ============================================================
+// AUTENTICACIÓN Y AUTORIZACIÓN
+// ============================================================
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Respuesta personalizada para 403 Forbidden
+// ============================================================
+// RESPUESTA 403
+// ============================================================
 app.UseStatusCodePages(async context =>
 {
     if (context.HttpContext.Response.StatusCode == 403)
@@ -229,5 +343,8 @@ app.UseStatusCodePages(async context =>
     }
 });
 
+// ============================================================
+// MAPEAR CONTROLLERS
+// ============================================================
 app.MapControllers();
 app.Run();

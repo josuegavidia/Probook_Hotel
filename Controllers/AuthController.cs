@@ -47,6 +47,34 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation($"Usuario registrado: {user.Email}");
 
+            // ============================================================
+            // LOGGING DE AUDITORÍA MANUAL
+            // ============================================================
+            var auditLogService = HttpContext.RequestServices.GetService<IAuditLogService>();
+            if (auditLogService != null)
+            {
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+                await auditLogService.LogActionAsync(
+                    userId: user.Id,
+                    userEmail: user.Email,
+                    actionType: "REGISTER",
+                    description: $"Nuevo usuario registrado: {user.Email}",
+                    clientIp: clientIp,
+                    userAgent: userAgent,
+                    resourceId: user.Id,
+                    resourceType: "User",
+                    newValues: new Dictionary<string, object>
+                    {
+                        { "email", user.Email },
+                        { "fullname", user.Fullname },
+                        { "role", user.Role }
+                    },
+                    status: "SUCCESS"
+                );
+            }
+
             return Created($"/api/auth/users/{user.Id}", new
             {
                 id = user.Id,
@@ -113,6 +141,26 @@ public class AuthController : ControllerBase
                     RequiresPasswordChange = user.RequiresPasswordChange
                 }
             };
+
+            // ============================================================
+            // LOGGING DE AUDITORÍA MANUAL
+            // ============================================================
+            var auditLogService = HttpContext.RequestServices.GetService<IAuditLogService>();
+            if (auditLogService != null)
+            {
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+                await auditLogService.LogActionAsync(
+                    userId: user.Id,
+                    userEmail: user.Email,
+                    actionType: "LOGIN",
+                    description: $"Login exitoso: {user.Email}",
+                    clientIp: clientIp,
+                    userAgent: userAgent,
+                    status: "SUCCESS"
+                );
+            }
 
             return Ok(response);
         }
@@ -254,6 +302,28 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation($"Contrasena cambiada por el usuario: {user.Email}");
 
+            // ============================================================
+            // LOGGING DE AUDITORÍA MANUAL
+            // ============================================================
+            var auditLogService = HttpContext.RequestServices.GetService<IAuditLogService>();
+            if (auditLogService != null)
+            {
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+                await auditLogService.LogActionAsync(
+                    userId: userId,
+                    userEmail: user.Email,
+                    actionType: "CHANGE_PASSWORD",
+                    description: $"Usuario cambió su contraseña",
+                    clientIp: clientIp,
+                    userAgent: userAgent,
+                    resourceId: userId,
+                    resourceType: "User",
+                    status: "SUCCESS"
+                );
+            }
+
             return Ok(new { message = "Contrasena actualizada exitosamente." });
         }
         catch (ArgumentException ex)
@@ -302,6 +372,86 @@ public class AuthController : ControllerBase
         {
             _logger.LogError($"Error al obtener usuario: {ex.Message}");
             return StatusCode(500, new { message = "Error al obtener usuario" });
+        }
+    }
+
+    // --------------------------------------------------------
+    // POST /api/auth/logout
+    // Invalida el token inmediatamente (blacklist)
+    // Header: Authorization: Bearer {token}
+    // Respuesta 200: logout exitoso
+    // --------------------------------------------------------
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromServices] ITokenBlacklistService tokenBlacklistService, [FromServices] IAuditLogService auditLogService)
+    {
+        try
+        {
+            // Obtener el token del header Authorization
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            {
+                return BadRequest(new
+                {
+                    message = "Token no encontrado en el header Authorization",
+                    code = "MISSING_TOKEN"
+                });
+            }
+
+            // Extraer el token (quitar "Bearer ")
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+
+            // Obtener datos del usuario desde el token
+            var userId = User.FindFirst("sub")?.Value ?? "UNKNOWN";
+            var userEmail = User.FindFirst("email")?.Value ?? "unknown@example.com";
+
+            // Llamar al servicio de logout
+            var success = await _authService.LogoutAsync(token, tokenBlacklistService);
+
+            if (success)
+            {
+                _logger.LogInformation("✅ Usuario desconectado exitosamente");
+
+                // ============================================================
+                // LOGGING DE AUDITORÍA MANUAL
+                // ============================================================
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+                await auditLogService.LogActionAsync(
+                    userId: userId,
+                    userEmail: userEmail,
+                    actionType: "LOGOUT",
+                    description: $"Usuario cerró sesión: {userEmail}",
+                    clientIp: clientIp,
+                    userAgent: userAgent,
+                    status: "SUCCESS"
+                );
+
+                return Ok(new
+                {
+                    message = "Logout exitoso. Token invalidado.",
+                    timestamp = DateTime.UtcNow,
+                    code = "LOGOUT_SUCCESS"
+                });
+            }
+
+            return BadRequest(new
+            {
+                message = "No se pudo procesar el logout",
+                code = "LOGOUT_FAILED"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error durante logout: {ex.Message}");
+            return StatusCode(500, new
+            {
+                message = "Error durante el logout",
+                error = ex.Message,
+                code = "LOGOUT_ERROR"
+            });
         }
     }
 }

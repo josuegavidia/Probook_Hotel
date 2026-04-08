@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprobación de Vouchers | ProBook Manager</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script>
+        const savedTheme = localStorage.getItem('probook_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <style>
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .vouchers-table {
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-header h3 {
+            font-size: 18px;
+            color: var(--text);
+            margin: 0;
+        }
+
+        /* TABLE WRAPPER PARA MOBILE */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead {
+            background: var(--bg);
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tbody tr {
+            background: var(--bg-card);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(91, 163, 217, 0.04);
+        }
+
+        .guest-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .guest-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .guest-email {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge.pending {
+            background: rgba(240, 212, 154, 0.15);
+            color: var(--accent);
+        }
+
+        .btn-view {
+            background: rgba(91, 163, 217, 0.15);
+            color: var(--primary);
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .guest-info-modal {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .guest-info-modal strong {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+
+        .guest-info-modal span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .preview-image {
+            width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+            max-height: 80vh;
+            object-fit: contain;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: #0F1117;
+            color: var(--text);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(91, 163, 217, 0.15);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-light);
+            box-shadow: 0 4px 12px rgba(91, 163, 217, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #e85555;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-danger:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(91, 163, 217, 0.08);
+            border-color: var(--primary);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: rgba(78, 205, 196, 0.12);
+            color: var(--success);
+            border-left-color: var(--success);
+        }
+
+        .alert-error {
+            background: rgba(255, 107, 107, 0.12);
+            color: var(--danger);
+            border-left-color: var(--danger);
+        }
+
+        .reject-form {
+            display: none;
+            background: rgba(240, 212, 154, 0.12);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(240, 212, 154, 0.2);
+        }
+
+        .reject-form.active {
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 22px;
+            }
+
+            .modal-content {
+                padding: 20px;
+                max-height: 90vh;
+            }
+
+            .modal-footer {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            table {
+                min-width: 600px;
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 12px 8px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 18px;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+
+            .modal-header {
+                margin-bottom: 15px;
+            }
+
+            .modal-title {
+                font-size: 18px;
+            }
+
+            table {
+                min-width: 500px;
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 10px 6px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .guest-email {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/manager-dashboard.html" class="navbar-brand">Pro<span>Book</span></a>
+    <div id="nav-user" class="navbar-user">Cargando...</div>
+</nav>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-label">Gestión</div>
+            <a href="/manager-dashboard.html" class="sidebar-link">📊 Dashboard</a>
+            <a href="/manager-approvals.html" class="sidebar-link active">✓ Aprobaciones</a>
+            <a href="/room-management.html" class="sidebar-link">🏨 Habitaciones</a>
+            <a href="/guest-list.html" class="sidebar-link">👥 Huéspedes</a>
+            <a href="/reports.html" class="sidebar-link">📈 Reportes</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Sistema</div>
+            <a href="/settings.html" class="sidebar-link">⚙️ Configuración</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Cuenta</div>
+            <button class="sidebar-link" onclick="logout()">🚪 Cerrar sesión</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Aprobación de Vouchers</h1>
+            <p class="page-subtitle">Revisa y aprueba los comprobantes de pago</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-value" id="stat-pending">0</div>
+            </div>
+        </div>
+
+        <div class="vouchers-table">
+            <div class="table-header">
+                <h3>Vouchers en Espera</h3>
+            </div>
+
+            <table id="vouchersTable">
+                <thead>
+                <tr>
+                    <th>Huésped</th>
+                    <th>Habitación</th>
+                    <th>Fechas</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="tableBody">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        Cargando...
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">✓</div>
+                <div class="empty-title">¡Todo al día!</div>
+                <p>No hay vouchers pendientes de revisión.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal de previsualización -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Revisar Voucher</h2>
+        </div>
+
+        <div class="modal-body">
+            <div class="guest-info-modal">
+                <strong id="modalGuestName"></strong>
+                <span id="modalGuestEmail"></span>
+            </div>
+
+            <img id="modalImage" class="preview-image" alt="Voucher">
+
+            <div class="reject-form" id="rejectForm">
+                <div class="form-group">
+                    <label class="form-label">Motivo del rechazo:</label>
+                    <select id="rejectionReason" class="form-control">
+                        <option value="">Selecciona un motivo...</option>
+                        <option value="Imagen ilegible o cortada">Imagen ilegible o cortada</option>
+                        <option value="El monto no coincide con la reserva">El monto no coincide</option>
+                        <option value="Documento expirado o inválido">Documento expirado</option>
+                        <option value="Formato no permitido">Formato no permitido</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-alert" class="alert"></div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closePreviewModal()">Cancelar</button>
+            <button class="btn btn-danger" id="rejectBtn">Rechazar</button>
+            <button class="btn btn-primary" id="approveBtn">Aprobar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/theme.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/notifications.js"></script>
+<script>
+    requireAuth('manager');
+    renderNavbar('manager');
+
+    let vouchersData = [];
+    let currentReviewingVoucherId = null;
+    let isRejectMode = false;
+
+    async function loadVouchers() {
+        try {
+            console.log('📋 Cargando vouchers pendientes...');
+            const response = await apiGet('/Vouchers/pending');
+            console.log('✅ Respuesta:', response);
+
+            vouchersData = response.vouchers || [];
+            document.getElementById('stat-pending').textContent = vouchersData.length;
+
+            if (vouchersData.length === 0) {
+                showEmptyState();
+            } else {
+                renderTable();
+            }
+        } catch (error) {
+            console.error('❌ Error:', error);
+            showAlert('alert-container', 'error', 'Error al cargar los vouchers');
+        }
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        document.getElementById('emptyState').style.display = 'none';
+
+        if (vouchersData.length === 0) {
+            showEmptyState();
+            return;
+        }
+
+        tbody.innerHTML = vouchersData.map(voucher => `
+            <tr>
+                <td>
+                    <div class="guest-info">
+                        <span class="guest-name">${voucher.guestName}</span>
+                        <span class="guest-email">${voucher.guestEmail}</span>
+                    </div>
+                </td>
+                <td>${voucher.roomNumber}</td>
+                <td><small>${voucher.checkInDate} → ${voucher.checkOutDate}</small></td>
+                <td>L. ${voucher.totalCost.toFixed(2)}</td>
+                <td>
+                    <span class="badge pending">${voucher.voucherStatus}</span>
+                </td>
+                <td>
+                    <button class="btn-view" onclick="previewVoucher('${voucher.reservationId}')">👁️ Ver</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function showEmptyState() {
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('tableBody').innerHTML = '';
+    }
+
+    function previewVoucher(reservationId) {
+        const voucher = vouchersData.find(v => v.reservationId === reservationId);
+        if (!voucher) {
+            console.error('❌ Voucher no encontrado:', reservationId);
+            return;
+        }
+
+        currentReviewingVoucherId = reservationId;
+        isRejectMode = false;
+
+        console.log('🔍 Abriendo modal para:', reservationId);
+
+        document.getElementById('modalGuestName').textContent = voucher.guestName;
+        document.getElementById('modalGuestEmail').textContent = voucher.guestEmail;
+
+        const imageEl = document.getElementById('modalImage');
+        const isImage = /\.(jpg|jpeg|png|gif)$/i.test(voucher.voucherUrl);
+
+        if (isImage) {
+            imageEl.src = voucher.voucherUrl;
+            imageEl.style.display = 'block';
+        } else {
+            imageEl.style.display = 'none';
+        }
+
+        resetModalState();
+        document.getElementById('previewModal').classList.add('active');
+    }
+
+    function closePreviewModal() {
+        document.getElementById('previewModal').classList.remove('active');
+        currentReviewingVoucherId = null;
+        isRejectMode = false;
+        resetModalState();
+    }
+
+    function resetModalState() {
+        isRejectMode = false;
+        document.getElementById('rejectForm').classList.remove('active');
+        document.getElementById('rejectionReason').value = '';
+        document.getElementById('rejectBtn').textContent = 'Rechazar';
+        document.getElementById('approveBtn').classList.remove('hidden');
+        document.getElementById('modal-alert').className = 'alert';
+        document.getElementById('modal-alert').textContent = '';
+    }
+
+    function toggleRejectForm() {
+        isRejectMode = !isRejectMode;
+        const form = document.getElementById('rejectForm');
+        const approveBtn = document.getElementById('approveBtn');
+        const rejectBtn = document.getElementById('rejectBtn');
+
+        console.log('🔄 toggleRejectForm - isRejectMode:', isRejectMode);
+
+        if (isRejectMode) {
+            form.classList.add('active');
+            approveBtn.classList.add('hidden');
+            rejectBtn.textContent = 'Confirmar rechazo';
+        } else {
+            form.classList.remove('active');
+            approveBtn.classList.remove('hidden');
+            rejectBtn.textContent = 'Rechazar';
+        }
+    }
+
+    async function submitApprove() {
+        if (!currentReviewingVoucherId) {
+            console.error('❌ No hay voucher para aprobar');
+            return;
+        }
+
+        console.log('✅ Aprobando voucher:', currentReviewingVoucherId);
+        document.getElementById('approveBtn').disabled = true;
+
+        try {
+            await apiPost(`/Vouchers/${currentReviewingVoucherId}/approve`, {});
+            showModalAlert('✅ Voucher aprobado exitosamente.', 'success');
+            setTimeout(() => {
+                closePreviewModal();
+                loadVouchers();
+            }, 1500);
+        } catch (error) {
+            console.error('❌ Error:', error);
+            showModalAlert('Error al aprobar el voucher: ' + error.message, 'error');
+            document.getElementById('approveBtn').disabled = false;
+        }
+    }
+
+    async function submitReject() {
+        if (!currentReviewingVoucherId) {
+            console.error('❌ No hay voucher para rechazar');
+            return;
+        }
+
+        const reason = document.getElementById('rejectionReason').value;
+
+        if (!reason) {
+            console.warn('⚠️ Motivo de rechazo no seleccionado');
+            showModalAlert('Selecciona un motivo de rechazo', 'error');
+            return;
+        }
+
+        console.log('❌ Rechazando voucher:', currentReviewingVoucherId, 'Motivo:', reason);
+        document.getElementById('rejectBtn').disabled = true;
+
+        try {
+            await apiPost(`/Vouchers/${currentReviewingVoucherId}/reject`, {
+                rejectionReason: reason
+            });
+            showModalAlert('✅ Voucher rechazado exitosamente.', 'success');
+            setTimeout(() => {
+                closePreviewModal();
+                loadVouchers();
+            }, 1500);
+        } catch (error) {
+            console.error('❌ Error:', error);
+            showModalAlert('Error al rechazar el voucher: ' + error.message, 'error');
+            document.getElementById('rejectBtn').disabled = false;
+        }
+    }
+
+    function showModalAlert(message, type) {
+        const container = document.getElementById('modal-alert');
+        container.textContent = message;
+        container.className = `alert alert-${type} show`;
+    }
+
+    function showAlert(containerId, type, message) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+    }
+
+    // Setup de botones del modal
+    function setupModalButtons() {
+        const rejectBtn = document.getElementById('rejectBtn');
+        const approveBtn = document.getElementById('approveBtn');
+
+        if (rejectBtn) {
+            rejectBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (isRejectMode) {
+                    console.log('📋 Ejecutando rechazo...');
+                    submitReject();
+                } else {
+                    console.log('📋 Abriendo formulario de rechazo...');
+                    toggleRejectForm();
+                }
+            };
+        }
+
+        if (approveBtn) {
+            approveBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('✅ Ejecutando aprobación...');
+                submitApprove();
+            };
+        }
+    }
+
+    // Inicializar
+    setupModalButtons();
+    loadVouchers();
+
+    // Recargar cada 30 segundos
+    setInterval(loadVouchers, 30000);
+
+    // Cerrar modal con Esc
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closePreviewModal();
+    });
+</script>
+
+</body>
+</html>
