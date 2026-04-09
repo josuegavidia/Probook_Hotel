@@ -58,19 +58,16 @@ builder.Services.AddMemoryCache();
 // CONFIGURACION DE JWT
 // ============================================================
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = builder.Configuration["Jwt:SecretKey"];
+var secretKey = builder.Configuration["Jwt:SecretKey"] 
+                 ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
-if (string.IsNullOrWhiteSpace(secretKey))
+if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
 {
-    throw new InvalidOperationException(
-        "JWT SecretKey no configurada. " +
-        "Para desarrollo, usa: dotnet user-secrets set \"Jwt:SecretKey\" \"tu_clave_aqui\"");
-}
-
-if (secretKey.Length < 32)
-{
-    throw new InvalidOperationException(
-        $"JWT SecretKey debe tener al menos 32 caracteres. Actual: {secretKey.Length}");
+    var message = string.IsNullOrWhiteSpace(secretKey) 
+        ? "JWT SecretKey no configurado en appsettings.json ni en variable de entorno JWT_SECRET_KEY"
+        : $"JWT SecretKey debe tener al menos 32 caracteres. Actual: {secretKey.Length}";
+    
+    throw new InvalidOperationException(message);
 }
 
 var keyBytes = Encoding.UTF8.GetBytes(secretKey);
@@ -96,6 +93,25 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = "name"
     };
 });
+
+// ============================================================
+// CONFIGURACION DE BREVO
+// ============================================================
+var brevoApiKey = builder.Configuration["Brevo:ApiKey"] 
+                  ?? Environment.GetEnvironmentVariable("BREVO_API_KEY");
+
+if (string.IsNullOrWhiteSpace(brevoApiKey))
+{
+    throw new InvalidOperationException(
+        "Brevo ApiKey no configurado. Configure 'Brevo:ApiKey' en appsettings.json " +
+        "o establezca la variable de entorno BREVO_API_KEY");
+}
+
+// Validar formato de la clave Brevo (debe comenzar con "xkeysib-")
+if (!brevoApiKey.StartsWith("xkeysib-"))
+{
+    Console.WriteLine("⚠️ ADVERTENCIA: Brevo ApiKey no tiene el formato esperado (debe comenzar con 'xkeysib-')");
+}
 
 // ============================================================
 // SWAGGER
@@ -137,15 +153,23 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // ============================================================
-// CORS - CONFIGURACIÓN STRICT
+// CORS - CONFIGURACIÓN DINAMICA (por ambiente)
 // ============================================================
-var allowedOrigins = new[] 
+var allowedOrigins = builder.Environment.IsDevelopment()
+    ? new[] 
+    {
+        "http://localhost:44354",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    }
+    : builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+        ?? new[] { "https://api-hotel-placeholder.com" };
+
+if (allowedOrigins == null || allowedOrigins.Length == 0)
 {
-    "http://localhost:44354",
-    "http://localhost:3000",
-    "https://tudominio.com",
-    "https://www.tudominio.com"
-};
+    throw new InvalidOperationException(
+        "CORS AllowedOrigins no configurado. Verifica Cors:AllowedOrigins en appsettings.json");
+}
 
 builder.Services.AddCors(options =>
 {
@@ -166,17 +190,39 @@ builder.Services.AddCors(options =>
 // ============================================================
 var app = builder.Build();
 
+// ============================================================
+// SWAGGER - CONTROL POR AMBIENTE Y CONFIGURACION
+// ============================================================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "ProBook API v1");
+        options.DefaultModelsExpandDepth(0);
+    });
+}
+else
+{
+    // En producción, Swagger está deshabilitado por defecto
+    // Para acceso en producción, usa variable de entorno ENABLE_SWAGGER=true
+    var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger", false);
+    if (enableSwagger)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "ProBook API v1");
+        });
+    }
 }
 
 // ============================================================
 // MIDDLEWARE PIPELINE - ORDEN IMPORTANTE
 // ============================================================
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
-// 0. SECURITY HEADERS - Aplicar PRIMERO a TODO
+// 1. SECURITY HEADERS - Aplicar a TODO
 // ============================================================
 app.Use(async (context, next) =>
 {
@@ -203,13 +249,11 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// 1. Token Blacklist (verifica tokens revocados)
+// 2. Token Blacklist (verifica tokens revocados)
 app.UseMiddleware<TokenBlacklistMiddleware>();
 
-// 2. Audit Logging (registra acciones)
+// 3. Audit Logging (registra acciones)
 app.UseMiddleware<AuditLoggingMiddleware>();
-
-
 
 // 4. HTTPS Redirect
 app.UseHttpsRedirection();
