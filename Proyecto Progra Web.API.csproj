@@ -27,14 +27,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Remove="wwwroot\**" />
-    <Content Include="wwwroot\manager-approvals.html" />
-    <Content Include="wwwroot\voucher-upload.html" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <StaticContent Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
+  <!-- NO AGREGAR NADA MÁS - .NET SDK ya incluye wwwroot automáticamente -->
 
 </Project>
