@@ -70,11 +70,9 @@ builder.Services.AddMemoryCache();
 // CONFIGURACION DE JWT
 // ============================================================
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:SecretKey"])
+var secretKey = string.IsNullOrWhiteSpace(builder.Configuration["Jwt:SecretKey"])
                     ? Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
-                    : builder.Configuration["Jwt:SecretKey"])
-                ?? throw new InvalidOperationException("JWT SecretKey no configurado");
-                 ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+                    : builder.Configuration["Jwt:SecretKey"];
 
 if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
 {
