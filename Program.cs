@@ -8,12 +8,26 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Caching.Memory;
+using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 
 // Deshabilitar el mapeo automatico de claims a nivel global
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ============================================================
+// CONFIGURACIÓN DE AZURE KEY VAULT
+// ============================================================
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+if (!string.IsNullOrEmpty(keyVaultUrl) && !builder.Environment.IsDevelopment())
+{
+    var credential = new DefaultAzureCredential();
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        credential);
+}
 
 // ============================================================
 // REGISTRO DE SERVICIOS
