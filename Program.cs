@@ -17,17 +17,15 @@ JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ============================================================
-// CONFIGURACIÓN DE AZURE KEY VAULT
-// ============================================================
-var keyVaultUrl = builder.Configuration["KeyVault:Url"];
-if (!string.IsNullOrEmpty(keyVaultUrl) && !builder.Environment.IsDevelopment())
-{
-    var credential = new DefaultAzureCredential();
-    builder.Configuration.AddAzureKeyVault(
-        new Uri(keyVaultUrl),
-        credential);
-}
+// DESHABILITADO POR AHORA - Usar variables de entorno en su lugar
+// var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+// if (!string.IsNullOrEmpty(keyVaultUrl) && !builder.Environment.IsDevelopment())
+// {
+//     var credential = new DefaultAzureCredential();
+//     builder.Configuration.AddAzureKeyVault(
+//         new Uri(keyVaultUrl),
+//         credential);
+// }
 
 // ============================================================
 // REGISTRO DE SERVICIOS
