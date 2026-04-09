@@ -1,4 +1,5 @@
-﻿using FirebaseAdmin;
+﻿using System.Text;
+using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
@@ -69,8 +70,27 @@ public class FirebaseService
 
     private string ResolveCredentialsPath()
     {
-        var envPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+        // 1. Intentar desde variable de entorno (base64)
+        var base64Env = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_BASE64");
+        if (!string.IsNullOrWhiteSpace(base64Env))
+        {
+            try
+            {
+                var jsonBytes = Convert.FromBase64String(base64Env);
+                var json = Encoding.UTF8.GetString(jsonBytes);
+                var tempPath = Path.Combine(Path.GetTempPath(), "firebase-credentials.json");
+                File.WriteAllText(tempPath, json);
+                _logger.LogInformation("Usando credenciales Firebase desde variable base64.");
+                return tempPath;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Error decodificando base64: {ex.Message}");
+            }
+        }
 
+        // 2. Intentar desde variable de entorno directa
+        var envPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
         if (!string.IsNullOrWhiteSpace(envPath))
         {
             if (!File.Exists(envPath))
@@ -83,13 +103,14 @@ public class FirebaseService
             return envPath;
         }
 
+        // 3. Fallback: archivo local
         var localPath = Path.Combine(AppContext.BaseDirectory, "Config", "firebase-credentials.json");
 
         if (!File.Exists(localPath))
         {
             throw new FileNotFoundException(
                 "No se encontraron credenciales Firebase. " +
-                "Define GOOGLE_APPLICATION_CREDENTIALS o coloca Config/firebase-credentials.json en el runtime.",
+                "Define FIREBASE_CREDENTIALS_BASE64 o GOOGLE_APPLICATION_CREDENTIALS o coloca Config/firebase-credentials.json en el runtime.",
                 localPath);
         }
 
