@@ -51,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F96B96EFD82146A3A303559C4451D73B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C7C4FBEE32DF49789E3285AA9C2C696B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7EA7180A87314F099008619E62E7BCA4 }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -62,4 +62,3 @@ jobs:
           app-name: 'probook-hotel-api'
           slot-name: 'Production'
           package: .
-          
