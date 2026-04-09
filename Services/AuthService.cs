@@ -6,7 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using BCrypt.Net;
-using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
 
 namespace Proyecto_Progra_Web.API.Services;
 
@@ -34,6 +34,29 @@ public class AuthService : IAuthService
     }
 
     // --------------------------------------------------------
+    // VALIDAR EMAIL - METODO REUTILIZABLE
+    // --------------------------------------------------------
+    /// <summary>
+    /// Valida el formato de un email de forma limpia y eficiente.
+    /// Evita validaciones redundantes usando MailAddress.
+    /// </summary>
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            var addr = new MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // --------------------------------------------------------
     // REGISTER
     // --------------------------------------------------------
 
@@ -48,20 +71,8 @@ public class AuthService : IAuthService
                 string.IsNullOrWhiteSpace(registerDto.Password))
                 throw new ArgumentException("Email y contrasena son requeridos");
 
-            // Validar formato basico del email: debe contener @ y .com
-            if (!registerDto.Email.Contains("@") || !registerDto.Email.Contains(".com"))
-                throw new ArgumentException("El email debe tener un formato valido (ejemplo: usuario@correo.com)");
-
-            // Validar formato de email: debe contener @ y .com
-            if (!registerDto.Email.Contains("@") || !registerDto.Email.Contains(".com"))
-                throw new ArgumentException("El email debe tener un formato valido (ejemplo: nombre@correo.com)");
-
-            // Validar formato de email con expresion regular
-            // Debe tener texto, arroba, texto y punto con dominio
-            var emailRegex = new System.Text.RegularExpressions.Regex(
-                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
-            );
-            if (!emailRegex.IsMatch(registerDto.Email))
+            // Validación de email limpia y única
+            if (!IsValidEmail(registerDto.Email))
                 throw new ArgumentException("El formato del correo electronico no es valido");
 
             if (registerDto.Password.Length < 6)
@@ -148,19 +159,8 @@ public class AuthService : IAuthService
                 string.IsNullOrWhiteSpace(loginDto.Password))
                 throw new ArgumentException("Email y contrasena son requeridos");
 
-            // Validar formato basico del email
-            if (!loginDto.Email.Contains("@") || !loginDto.Email.Contains(".com"))
-                throw new ArgumentException("El email debe tener un formato valido (ejemplo: usuario@correo.com)");
-
-            // Validar formato de email
-            if (!loginDto.Email.Contains("@") || !loginDto.Email.Contains(".com"))
-                throw new ArgumentException("El email debe tener un formato valido (ejemplo: nombre@correo.com)");
-
-            // Validar formato de email
-            var emailRegex = new System.Text.RegularExpressions.Regex(
-                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
-            );
-            if (!emailRegex.IsMatch(loginDto.Email))
+            // Validación de email limpia y única
+            if (!IsValidEmail(loginDto.Email))
                 throw new ArgumentException("El formato del correo electronico no es valido");
 
             var usersCollection = _firebaseService.GetCollection("users");
@@ -211,7 +211,9 @@ public class AuthService : IAuthService
     {
         try
         {
-            var secretKey = _configuration["Jwt:SecretKey"];
+            var secretKey = _configuration["Jwt:SecretKey"] 
+                            ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            
             if (string.IsNullOrEmpty(secretKey))
                 return false;
 
@@ -271,7 +273,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var secretKey = _configuration["Jwt:SecretKey"];
+            var secretKey = _configuration["Jwt:SecretKey"] 
+                            ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
             var issuer = _configuration["Jwt:Issuer"];
             var audience = _configuration["Jwt:Audience"];
 
@@ -462,7 +465,10 @@ public class AuthService : IAuthService
             var hash = dict.ContainsKey("PasswordHash") ? dict["PasswordHash"].ToString()! : "";
             return BCrypt.Net.BCrypt.Verify(currentPassword, hash);
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task ChangePassword(string userId, string email, string newPassword)
@@ -498,6 +504,73 @@ public class AuthService : IAuthService
         {
             _logger.LogError($"Error en ChangePassword: {ex.Message}");
             throw;
+        }
+    }
+
+    // --------------------------------------------------------
+    // LOGOUT
+    // --------------------------------------------------------
+
+    public async Task<bool> LogoutAsync(string token, ITokenBlacklistService tokenBlacklistService)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _logger.LogWarning("⚠️ Token vacío en logout");
+                return false;
+            }
+
+            if (tokenBlacklistService == null)
+            {
+                _logger.LogError("❌ TokenBlacklistService no inicializado");
+                return false;
+            }
+
+            // Decodificar el token para obtener la expiración
+            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken;
+
+            try
+            {
+                jwtToken = handler.ReadToken(token) as JwtSecurityToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"⚠️ Token inválido en logout: {ex.Message}");
+                return false;
+            }
+
+            if (jwtToken == null)
+            {
+                _logger.LogWarning("⚠️ No se pudo decodificar el token");
+                return false;
+            }
+
+            // Calcular cuánto tiempo falta para que expire
+            TimeSpan timeToExpire;
+
+            // Si el token ya expiró, agregarlo con tiempo corto igual por seguridad
+            if (jwtToken.ValidTo <= DateTime.UtcNow)
+            {
+                _logger.LogWarning("⚠️ Token ya ha expirado, pero se agrega a blacklist por seguridad");
+                timeToExpire = TimeSpan.FromSeconds(1);
+            }
+            else
+            {
+                timeToExpire = jwtToken.ValidTo - DateTime.UtcNow;
+            }
+
+            // Agregar a blacklist con ese tiempo de expiración
+            await tokenBlacklistService.AddToBlacklistAsync(token, timeToExpire);
+
+            _logger.LogInformation("✅ Usuario desconectado exitosamente. Token invalidado.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"❌ Error durante logout: {ex.Message}");
+            return false;
         }
     }
 
@@ -539,68 +612,5 @@ public class AuthService : IAuthService
             user.ReservationTimestamp = ((Timestamp)dict["ReservationTimestamp"]).ToDateTime();
 
         return user;
-    }
-    
-        // --------------------------------------------------------
-    // LOGOUT
-    // --------------------------------------------------------
-
-    public async Task<bool> LogoutAsync(string token, ITokenBlacklistService tokenBlacklistService)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                _logger.LogWarning("⚠️ Token vacío en logout");
-                return false;
-            }
-
-            if (tokenBlacklistService == null)
-            {
-                _logger.LogError("❌ TokenBlacklistService no inicializado");
-                return false;
-            }
-
-            // Decodificar el token para obtener la expiración
-            var handler = new JwtSecurityTokenHandler();
-            JwtSecurityToken jwtToken;
-
-            try
-            {
-                jwtToken = handler.ReadToken(token) as JwtSecurityToken;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"⚠️ Token inválido en logout: {ex.Message}");
-                return false;
-            }
-
-            if (jwtToken == null)
-            {
-                _logger.LogWarning("⚠️ No se pudo decodificar el token");
-                return false;
-            }
-
-            // Verificar que el token aún no ha expirado
-            if (jwtToken.ValidTo <= DateTime.UtcNow)
-            {
-                _logger.LogWarning("⚠️ Token ya ha expirado");
-                return false;
-            }
-
-            // Calcular cuánto tiempo falta para que expire
-            TimeSpan timeToExpire = jwtToken.ValidTo - DateTime.UtcNow;
-
-            // Agregar a blacklist con ese tiempo de expiración
-            await tokenBlacklistService.AddToBlacklistAsync(token, timeToExpire);
-
-            _logger.LogInformation("✅ Usuario desconectado exitosamente. Token invalidado.");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"❌ Error durante logout: {ex.Message}");
-            return false;
-        }
     }
 }
