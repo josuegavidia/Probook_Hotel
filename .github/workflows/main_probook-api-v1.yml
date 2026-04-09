@@ -48,17 +48,10 @@ jobs:
         with:
           name: .net-app
       
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'probook-api-v1'
-          slot-name: 'Production'
+          app-name: 'probook-hotel-api'
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
           package: .
